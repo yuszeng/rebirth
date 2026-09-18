@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeOptionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/UpgradeOptionData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "attack_speed"
+DisplayName = "+ 攻击速度"
+Description = "攻速 +12%"
+Stat = 2
+Flat = 0.0
+Percent = 0.12
+Weight = 1.0

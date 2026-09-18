@@ -1,0 +1,10 @@
+.godot/
+.vs/
+bin/
+obj/
+*.user
+*.translation
+export.cfg
+export_credentials.cfg
+.DS_Store
+

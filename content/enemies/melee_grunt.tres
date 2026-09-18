@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/EnemyData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "melee_grunt"
+DisplayName = "游荡者"
+Tags = PackedStringArray("melee", "basic")
+MaxHp = 24.0
+MoveSpeed = 95.0
+Attack = 8.0
+AttackInterval = 0.9
+ContactRange = 28.0
+Xp = 6
+Gold = 1
+Radius = 14.0
+Color = Color(0.86, 0.28, 0.32, 1)

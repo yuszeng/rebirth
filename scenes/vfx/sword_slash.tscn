@@ -1,0 +1,28 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/combat/attack/SlashVfx.cs" id="1"]
+[ext_resource type="Script" path="res://src/combat/attack/SweepHitbox.cs" id="2"]
+[ext_resource type="Texture2D" path="res://content/weapons/sword.png" id="3"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
+size = Vector2(80, 16)
+
+[node name="SwordSlash" type="Node2D"]
+z_index = 30
+script = ExtResource("1")
+
+[node name="Sweep" type="Node2D" parent="."]
+
+[node name="Blade" type="Sprite2D" parent="Sweep"]
+texture = ExtResource("3")
+
+[node name="Hitbox" type="Area2D" parent="Sweep"]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("2")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Sweep/Hitbox"]
+shape = SubResource("RectangleShape2D_hit")
+
+[node name="Trail" type="Sprite2D" parent="."]

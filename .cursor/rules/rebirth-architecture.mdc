@@ -1,0 +1,32 @@
+---
+description: Rebirth 长期架构约束。改玩法或加系统前必须先读 docs，且只做当前 Phase。
+alwaysApply: true
+---
+
+# Rebirth 开发约束
+
+开始任何实现前先读：
+
+- `docs/GAME_DESIGN.md`
+- `docs/ARCHITECTURE.md`
+- `docs/ROADMAP.md`
+
+当前只做 **Phase 1**。未接到明确指令时，禁止进入 Phase 2+（不要借机实现技能、装备、商店、队友、奇遇、转生、魔王、剧情）。
+
+## 必须
+
+- 使用 **C#**（不要新增 GDScript 玩法代码）
+- 在现有 `src/core|combat|character|progression|content` 边界上扩展（子目录：`core/state`、`core/utils`、`combat/damage|attack|spawn|ai`、`character/stats`）
+- 内容用 Resource；属性用 `CharacterStats` + `StatModifier`
+- 扣血走 `DamageSystem`；找目标走 `TargetingSystem`；随机走 `GameRng`
+- 升级选项动态生成，禁止写死三个按钮逻辑
+- 玩家只有 `Player`，武器可替换，敌人读 `EnemyData`
+
+## 禁止
+
+- 为未开始 Phase 写完整空系统
+- 把技能名/怪物类型写成到处 if 字符串
+- 把商店/技能/装备塞进 Player
+- 推翻现有攻击/伤害管道另起一套
+
+完成后运行并修 Phase 1，等待下一步指令。

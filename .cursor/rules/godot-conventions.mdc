@@ -1,0 +1,15 @@
+---
+description: Godot 4 C# 约定（Rebirth）
+globs: **/*.{cs,tscn,tres,csproj}
+alwaysApply: false
+---
+
+# Godot 约定
+
+- Godot **4.4** + **C#**。节点脚本用 `partial class`，数据用 `[GlobalClass]` Resource。
+- 不要再新增 GDScript 玩法逻辑。
+- Autoload 仅限 `EventBus`、`GameRng`、`GameManager`。
+- 系统间用 `EventBus` 的 C# event（类型安全），不要靠节点路径互相找。
+- 复杂业务用中文注释说明原因；直观赋值不要空话注释。
+- 数值放 `content/*.tres`，不要写进场景。
+- UI 只展示/请求 `RunState`，不保存进度。

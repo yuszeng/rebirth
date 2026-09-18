@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/content/WeaponData.cs" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/vfx/sword_slash.tscn" id="2"]
+[ext_resource type="Texture2D" path="res://content/weapons/sword.png" id="3"]
+
+[resource]
+script = ExtResource("1")
+Id = "sword"
+DisplayName = "铁剑"
+BonusDamage = 0.0
+AttackRange = 100.0
+Targeting = 0
+MaxTargets = 3
+DamageTags = PackedStringArray("weapon", "melee", "area")
+HitShape = 1
+Visual = 1
+AttackVfx = ExtResource("2")
+AttackVfxTexture = ExtResource("3")
+SlashArcDegrees = 110.0
+SlashDuration = 0.14

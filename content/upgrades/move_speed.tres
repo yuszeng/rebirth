@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeOptionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/UpgradeOptionData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "move_speed"
+DisplayName = "+ 移动速度"
+Description = "移速 +25"
+Stat = 3
+Flat = 25.0
+Percent = 0.0
+Weight = 1.0

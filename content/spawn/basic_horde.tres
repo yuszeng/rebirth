@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SpawnConfig" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/SpawnConfig.cs" id="1"]
+[ext_resource type="Resource" path="res://content/enemies/melee_grunt.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Enemy = ExtResource("2")
+Interval = 0.5
+MaxAlive = 40
+SpawnDistanceMin = 420.0
+SpawnDistanceMax = 560.0
