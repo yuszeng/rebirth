@@ -1,6 +1,6 @@
 namespace Rebirth.Core;
 
-/// <summary>全局游戏流程控制器：本局状态、经验/金币/升级、胜负判定。</summary>
+/// <summary>全局游戏流程控制器：战斗回合、升级、商店、胜负。不解析商品内部效果。</summary>
 public partial class GameManager : Node
 {
     public static GameManager Instance { get; private set; } = null!; // 单例引用
@@ -14,7 +14,12 @@ public partial class GameManager : Node
     readonly ExperienceTracker _xp = new(); // 经验计算
     readonly Wallet _wallet = new(); // 金币管理
     readonly UpgradeService _upgrades = new(); // 升级选项抽取
-    Player? _player; // 当前玩家引用（用于应用升级）
+    readonly ShopService _shop = new(); // 商店货架
+    Player? _player; // 当前玩家引用（用于应用升级/商品）
+    bool _shopAfterUpgrade; // 回合已结束，升级全部选完后再进商店
+    bool _roundTimeUp; // 本回合战斗时间已到，避免每帧重复请求进店
+    bool _roundFieldCleared; // 本回合结束清场只做一次
+    int _shopPurchaseSerial; // 保证商店修饰器 SourceId 不冲突
 
     public override void _EnterTree() // 进入树时设置单例引用
     {
@@ -40,30 +45,58 @@ public partial class GameManager : Node
         Player player,
         IEnumerable<UpgradeOptionData> upgradePool,
         WeaponData? startingWeapon = null,
+        IEnumerable<ShopItemData>? shopPool = null,
+        ShopConfig? shopConfig = null,
+        CombatLoopConfig? combatLoop = null,
         ulong seed = 0)
     {
         GameRng.Instance.Reseed(seed); // 重置随机种子（0 表示随机）
-        Run = new RunState { XpToNext = ExperienceTracker.RequiredFor(1) }; // 初始化本局数据
-        _upgrades.Pool = upgradePool.ToList(); // 设置升级选项池
-        _player = player; // 设置当前玩家引用
+        var roundDuration = combatLoop?.RoundDurationSeconds > 0f
+            ? combatLoop.RoundDurationSeconds
+            : 60f;
+        Run = new RunState
+        {
+            XpToNext = ExperienceTracker.RequiredFor(1),
+            RoundDurationSeconds = roundDuration,
+        };
+        _upgrades.Pool = upgradePool.ToList();
+        _shop.Pool = shopPool?.ToList() ?? [];
+        _shop.Config = shopConfig ?? new ShopConfig();
+        _player = player;
+        _shopAfterUpgrade = false;
+        _roundTimeUp = false;
+        _roundFieldCleared = false;
+        _shopPurchaseSerial = 0;
         // 场景重载后 Autoload 仍存活，需重新绑定玩家属性与武器
         if (_player.Data != null)
         {
-            _player.Setup(_player.Data, startingWeapon); // 设置玩家数据和武器
+            _player.Setup(_player.Data, startingWeapon);
         }
 
-        IsUserPaused = false; // 设置用户暂停为 false
-        State = GameState.InRun; // 进入游戏状态
-        GetTree().Paused = false; // 解除暂停（GameOver/升级后可能仍为 true）
-        EventBus.Instance.EmitRunStarted(Run); // 触发本局开始事件
+        IsUserPaused = false;
+        State = GameState.InRun;
+        GetTree().Paused = false;
+        EventBus.Instance.EmitRunStarted(Run);
+        EventBus.Instance.EmitCombatRoundStarted();
     }
 
     public override void _Process(double delta) // 处理帧更新
     {
-        // 本局进行中时累计存活时间
+        // 本局进行中时累计存活时间与回合计时
         if (State == GameState.InRun && !GetTree().Paused)
         {
-            Run.ElapsedSeconds += (float)delta; // 累计存活时间
+            Run.ElapsedSeconds += (float)delta;
+            Run.RoundElapsedSeconds += (float)delta;
+            if (Run.RoundElapsedSeconds >= Run.RoundDurationSeconds)
+            {
+                Run.RoundElapsedSeconds = Run.RoundDurationSeconds;
+                // 推迟到本帧击杀/升级处理之后，保证进店前先结算升级
+                if (!_roundTimeUp)
+                {
+                    _roundTimeUp = true;
+                    CallDeferred(nameof(RequestShop));
+                }
+            }
         }
 
         // 游戏结束后按 R 快速重开
@@ -117,8 +150,8 @@ public partial class GameManager : Node
         EventBus.Instance.EmitXpGained(enemy.Data.Xp, Run.Xp); // 触发获得经验事件
         if (levels > 0)
         {
-            EventBus.Instance.EmitLevelUp(Run.Level); // 触发升级事件
-            OfferUpgrade();
+            // 战斗中只记账，升级选择推迟到回合结束、进商店之前
+            EventBus.Instance.EmitLevelUp(Run.Level);
         }
     }
 
@@ -133,7 +166,13 @@ public partial class GameManager : Node
         var options = _upgrades.Offer(); // 从池中加权随机抽取
         if (options.Count == 0)
         {
-            Run.PendingLevelUps = 0; // 待选升级数量归零    
+            Run.PendingLevelUps = 0;
+            if (_shopAfterUpgrade)
+            {
+                OpenShop();
+                return;
+            }
+
             State = GameState.InRun;
             GetTree().Paused = false;
             return;
@@ -143,6 +182,23 @@ public partial class GameManager : Node
         State = GameState.LevelUp;
         GetTree().Paused = true; // 升级选择期间暂停战斗
         EventBus.Instance.EmitPauseChanged(false);
+        EventBus.Instance.EmitUpgradeOffered(options);
+    }
+
+    /// <summary>升级选择期间重新抽一组选项，不消耗待选次数。</summary>
+    public void RefreshUpgradeOptions()
+    {
+        if (State != GameState.LevelUp)
+        {
+            return;
+        }
+
+        var options = _upgrades.Offer();
+        if (options.Count == 0)
+        {
+            return;
+        }
+
         EventBus.Instance.EmitUpgradeOffered(options);
     }
 
@@ -163,10 +219,139 @@ public partial class GameManager : Node
             return; // 还有待选升级时继续弹出
         }
 
+        if (_shopAfterUpgrade)
+        {
+            // 先让升级面板根据非 LevelUp 状态隐藏，再尝试进店
+            State = GameState.InRun;
+            EventBus.Instance.EmitUpgradeChosen(option);
+            RequestShop();
+            return;
+        }
+
         State = GameState.InRun;
         GetTree().Paused = false;
         // 必须在 State 切回 InRun 之后再发事件，UI 才能正确判断并隐藏面板
         EventBus.Instance.EmitUpgradeChosen(option);
+    }
+
+    /// <summary>回合结束：先清场，有待选升级则弹选择，全部选完再进商店。</summary>
+    void RequestShop()
+    {
+        if (!Run.IsAlive || State == GameState.GameOver || State == GameState.Shop)
+        {
+            return;
+        }
+
+        PauseAndClearRound();
+
+        if (State == GameState.LevelUp || Run.PendingLevelUps > 0)
+        {
+            _shopAfterUpgrade = true;
+            if (State != GameState.LevelUp)
+            {
+                OfferUpgrade();
+            }
+
+            return;
+        }
+
+        OpenShop();
+    }
+
+    /// <summary>停战斗并清场。升级选择期间怪会冻在原地，不如先清掉。</summary>
+    void PauseAndClearRound()
+    {
+        IsUserPaused = false;
+        GetTree().Paused = true;
+        EventBus.Instance.EmitPauseChanged(false);
+        if (_roundFieldCleared)
+        {
+            return;
+        }
+
+        _roundFieldCleared = true;
+        EventBus.Instance.EmitCombatRoundEnded();
+    }
+
+    void OpenShop()
+    {
+        if (!Run.IsAlive || State == GameState.GameOver || State == GameState.Shop)
+        {
+            return;
+        }
+
+        if (State == GameState.LevelUp || Run.PendingLevelUps > 0)
+        {
+            RequestShop();
+            return;
+        }
+
+        PauseAndClearRound();
+        _shopAfterUpgrade = false;
+        State = GameState.Shop;
+        _shop.OpenNewVisit();
+        EventBus.Instance.EmitShopOpened(_shop.Snapshot(Run));
+    }
+
+    /// <summary>用本局金币买当前货架上的一件商品。</summary>
+    public void BuyShopItem(int slotIndex)
+    {
+        if (State != GameState.Shop)
+        {
+            return;
+        }
+
+        var item = _shop.TryBuy(slotIndex, _wallet, Run);
+        if (item == null)
+        {
+            return;
+        }
+
+        _shopPurchaseSerial += 1;
+        _player?.ApplyStatModifier(item.ToModifier($"shop_{Run.CombatRound}_{_shopPurchaseSerial}_{item.Id}"));
+        EventBus.Instance.EmitShopChanged(_shop.Snapshot(Run));
+    }
+
+    /// <summary>花费金币刷新四个槽位。</summary>
+    public void RefreshShop()
+    {
+        if (State != GameState.Shop)
+        {
+            return;
+        }
+
+        if (!_shop.TryRefresh(_wallet, Run))
+        {
+            return;
+        }
+
+        EventBus.Instance.EmitShopChanged(_shop.Snapshot(Run));
+    }
+
+    /// <summary>离开商店，清零回合计时并开始下一回合战斗。</summary>
+    public void LeaveShop()
+    {
+        if (State != GameState.Shop || !Run.IsAlive)
+        {
+            return;
+        }
+
+        Run.CombatRound += 1;  // 回合数增加
+        Run.RoundElapsedSeconds = 0f; // 回合已战斗时间清零
+        _roundTimeUp = false; // 回合时间未到清零
+        _shopAfterUpgrade = false; // 商店后升级清零
+        _roundFieldCleared = false; // 回合结束清场清零
+        State = GameState.InRun; // 进入下一回合战斗状态 
+        if (_player != null)
+        {
+            _player.Health.HealFull(); // 重置玩家生命为满血
+            _player.GlobalPosition = Vector2.Zero; // 与 Main 出生点一致：竞技场中心
+            _player.Velocity = Vector2.Zero; // 避免残留移动速度
+        }
+
+        GetTree().Paused = false; // 解除暂停
+        EventBus.Instance.EmitShopClosed(); // 触发商店关闭事件
+        EventBus.Instance.EmitCombatRoundStarted(); // 触发下一回合战斗开始事件
     }
 
     /// <summary>玩家死亡，生成本局结算并暂停。</summary>

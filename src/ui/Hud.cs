@@ -14,8 +14,8 @@ public partial class Hud : CanvasLayer
 	{
 		ProcessMode = ProcessModeEnum.Always; // 升级/暂停时仍刷新
 		var root = CreateRoot();
-		_hp = CreateBar(root, new Color(0.78f, 0.22f, 0.28f), new Vector2(24, 24), out _hpValue);
-		_xp = CreateBar(root, new Color(0.28f, 0.55f, 0.92f), new Vector2(24, 48), out _xpValue);
+		_hp = CreateBar(root, new Color(0.78f, 0.22f, 0.28f), new Vector2(24, 24), out _hpValue); // 创建血量进度条
+		_xp = CreateBar(root, new Color(0.28f, 0.55f, 0.92f), new Vector2(24, 55), out _xpValue); // 创建经验进度条
 		_stats = new Label
 		{
 			Position = new Vector2(24, 76),
@@ -127,8 +127,10 @@ public partial class Hud : CanvasLayer
 		_xpValue.Text = $"{run.Xp}/{run.XpToNext}";
 
 		var total = (int)run.ElapsedSeconds;
+		var remain = Mathf.Max(0, Mathf.CeilToInt(run.RoundDurationSeconds - run.RoundElapsedSeconds));
 		_stats.Text =
-			$"Lv.{run.Level}    金币 {run.Gold}    击杀 {run.KillCount}    时间 {total / 60:00}:{total % 60:00}";
+			$"Lv.{run.Level}    金币 {run.Gold}    击杀 {run.KillCount}    回合 {run.CombatRound} 剩余 {remain / 60:00}:{remain % 60:00}    总时长 {total / 60:00}:{total % 60:00}" +
+			(run.PendingLevelUps > 0 ? $"    待选升级 {run.PendingLevelUps}" : "");
 		_attributes.Text = FormatAttributes(player);
 	}
 

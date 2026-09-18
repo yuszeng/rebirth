@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_attack_speed"
+DisplayName = "迅捷握把"
+Description = "攻击速度 +12%"
+Price = 12
+Weight = 1.0
+Stat = 2
+Flat = 0.0
+Percent = 0.12

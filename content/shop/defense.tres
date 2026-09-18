@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_defense"
+DisplayName = "厚实护腕"
+Description = "防御 +4"
+Price = 10
+Weight = 1.0
+Stat = 5
+Flat = 4.0
+Percent = 0.0

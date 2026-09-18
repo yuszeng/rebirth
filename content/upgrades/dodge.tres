@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeOptionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/UpgradeOptionData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "dodge"
+DisplayName = "+ 闪避"
+Description = "闪避 +3%"
+Stat = 8
+Flat = 0.0
+Percent = 0.03
+Weight = 1.0

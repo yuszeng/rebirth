@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_lifesteal"
+DisplayName = "吸血戒指"
+Description = "生命偷取 +5%"
+Price = 18
+Weight = 0.7
+Stat = 13
+Flat = 0.0
+Percent = 0.05

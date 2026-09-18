@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeOptionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/UpgradeOptionData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "projectile_speed"
+DisplayName = "+ 投射物速度"
+Description = "投射物速度 +15%"
+Stat = 14
+Flat = 0.0
+Percent = 0.15
+Weight = 1.0

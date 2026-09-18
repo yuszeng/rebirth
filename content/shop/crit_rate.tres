@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_crit_rate"
+DisplayName = "准星护符"
+Description = "暴击率 +8%"
+Price = 16
+Weight = 0.8
+Stat = 6
+Flat = 0.08
+Percent = 0.0

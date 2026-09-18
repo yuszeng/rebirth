@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ShopConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopConfig.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+OfferCount = 4
+RefreshBasePrice = 5
+RefreshPriceStep = 5

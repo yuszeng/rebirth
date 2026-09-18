@@ -47,6 +47,18 @@ public partial class Health : Node
         Changed?.Invoke(Current, Maximum);
     }
 
+    /// <summary>回满血，用于回合间重置。</summary>
+    public void HealFull()
+    {
+        if (IsDead)
+        {
+            return;
+        }
+
+        Current = Maximum;
+        Changed?.Invoke(Current, Maximum);
+    }
+
     /// <summary>调整上限；preserveRatio 为 true 时按原比例缩放当前血量。</summary>
     public void RetargetMaximum(float newMaximum, bool preserveRatio)
     {

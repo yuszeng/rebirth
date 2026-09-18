@@ -3,14 +3,15 @@ namespace Rebirth.UI;
 /// <summary>升级选择面板：暂停时弹出，展示动态生成的升级按钮。</summary>
 public partial class LevelUpPanel : CanvasLayer
 {
-	VBoxContainer _box = null!; // 按钮容器
-	Label _title = null!; // 标题标签
+	VBoxContainer _options = null!; // 只放动态选项，和标题/刷新分开
+	Label _title = null!;
+	Button _refresh = null!;
 
 	public override void _Ready()
 	{
 		// 始终处理，保证暂停时也能响应
 		ProcessMode = ProcessModeEnum.Always;
-		// 初始化时面板隐藏
+		Layer = 15; // 高于商店，避免回合结束时两块界面叠在一起
 		Visible = false;
 
 		// 创建半透明遮罩
@@ -33,38 +34,49 @@ public partial class LevelUpPanel : CanvasLayer
 		// 面板尺寸
 		panel.OffsetLeft = -230;
 		panel.OffsetRight = 230;
-		panel.OffsetTop = -140;
-		panel.OffsetBottom = 140;
+		panel.OffsetTop = -180;
+		panel.OffsetBottom = 180;
 		AddChild(panel);
 
-		// 创建用于承载按钮和标题的垂直容器
-		_box = new VBoxContainer { Name = "VBox" };
-		_box.AddThemeConstantOverride("separation", 12); // 按钮间距
-		panel.AddChild(_box);
+		var box = new VBoxContainer { Name = "VBox" };
+		box.AddThemeConstantOverride("separation", 12);
+		panel.AddChild(box);
 
-		// 添加标题标签
 		_title = new Label
 		{
-			Text = "选择一项强化", // 固定标题文本
+			Text = "选择一项强化",
 			HorizontalAlignment = HorizontalAlignment.Center,
 		};
-		_box.AddChild(_title); // 添加标题标签
+		box.AddChild(_title);
+
+		_options = new VBoxContainer { Name = "Options" };
+		_options.AddThemeConstantOverride("separation", 12);
+		box.AddChild(_options);
+
+		_refresh = new Button
+		{
+			Text = "刷新选项",
+			CustomMinimumSize = new Vector2(420, 44),
+		};
+		// 走 GameManager 重新加权抽取，而不是把整个升级池塞给 UI
+		_refresh.Pressed += () => GameManager.Instance.RefreshUpgradeOptions();
+		box.AddChild(_refresh);
 
 		// 注册事件：收到升级选项时回调
-		EventBus.Instance.UpgradeOffered += OnOffered;
-		EventBus.Instance.UpgradeChosen += OnUpgradeChosen;
+		EventBus.Instance.UpgradeOffered += OnOffered; // 订阅升级选项事件
+		EventBus.Instance.UpgradeChosen += OnUpgradeChosen; // 订阅升级选择事件
 	}
 
 	public override void _ExitTree()
 	{
 		if (EventBus.Instance != null)
 		{
-			EventBus.Instance.UpgradeOffered -= OnOffered;
-			EventBus.Instance.UpgradeChosen -= OnUpgradeChosen;
+			EventBus.Instance.UpgradeOffered -= OnOffered; // 取消订阅升级选项事件
+			EventBus.Instance.UpgradeChosen -= OnUpgradeChosen; // 取消订阅升级选择事件
 		}
 	}
 
-	void OnUpgradeChosen(UpgradeOptionData _)
+	void OnUpgradeChosen(UpgradeOptionData _) // 升级选择事件处理
 	{
 		// 选完且已离开 LevelUp 状态时隐藏（连升时 State 仍为 LevelUp，由 OnOffered 刷新按钮）
 		if (GameManager.Instance.State != GameState.LevelUp)
@@ -77,13 +89,9 @@ public partial class LevelUpPanel : CanvasLayer
 	void OnOffered(IReadOnlyList<UpgradeOptionData> options)
 	{
 		Visible = true;
-		// 清除旧按钮，保留标题
-		foreach (var child in _box.GetChildren())
+		foreach (var child in _options.GetChildren())
 		{
-			if (child != _title)
-			{
-				child.QueueFree();
-			}
+			child.QueueFree();
 		}
 
 		foreach (var option in options)
@@ -95,7 +103,7 @@ public partial class LevelUpPanel : CanvasLayer
 				CustomMinimumSize = new Vector2(420, 64),
 			};
 			button.Pressed += () => GameManager.Instance.ChooseUpgrade(captured);
-			_box.AddChild(button);
+			_options.AddChild(button);
 		}
 	}
 }

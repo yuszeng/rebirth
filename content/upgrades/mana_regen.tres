@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeOptionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/UpgradeOptionData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "mana_regen"
+DisplayName = "+ 法力回复"
+Description = "法力回复 +2/秒"
+Stat = 10
+Flat = 2.0
+Percent = 0.0
+Weight = 1.0

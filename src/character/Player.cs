@@ -60,11 +60,17 @@ public partial class Player : Combatant
     public void ApplyUpgrade(UpgradeOptionData option)
     {
         var source = $"upgrade_{GameManager.Instance.Run.Level}_{option.Id}"; // 唯一来源 ID，便于日后移除
-        Stats.AddModifier(option.ToModifier(source));
+        ApplyStatModifier(option.ToModifier(source));
+    }
+
+    /// <summary>商店/升级共用：改属性。加最大生命时按比例缩放当前血量。</summary>
+    public void ApplyStatModifier(StatModifier modifier)
+    {
+        Stats.AddModifier(modifier);
         var newMax = Stats.GetValue(StatType.MaxHp);
         if (!Mathf.IsEqualApprox(Health.Maximum, newMax))
         {
-            Health.RetargetMaximum(newMax, preserveRatio: true); // 升级加血时保持当前血量比例
+            Health.RetargetMaximum(newMax, preserveRatio: true);
         }
     }
 

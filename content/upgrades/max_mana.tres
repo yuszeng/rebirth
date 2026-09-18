@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeOptionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/UpgradeOptionData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "max_mana"
+DisplayName = "+ 最大法力"
+Description = "法力上限 +20"
+Stat = 9
+Flat = 20.0
+Percent = 0.0
+Weight = 1.0

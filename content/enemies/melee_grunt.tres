@@ -13,6 +13,6 @@ Attack = 8.0
 AttackInterval = 0.9
 ContactRange = 28.0
 Xp = 6
-Gold = 1
+Gold = 10
 Radius = 14.0
 Color = Color(0.86, 0.28, 0.32, 1)

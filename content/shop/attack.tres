@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_attack"
+DisplayName = "锋刃打磨"
+Description = "基础攻击 +8"
+Price = 12
+Weight = 1.0
+Stat = 1
+Flat = 8.0
+Percent = 0.0

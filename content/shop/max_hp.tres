@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_max_hp"
+DisplayName = "活力药剂"
+Description = "生命上限 +25"
+Price = 14
+Weight = 1.0
+Stat = 0
+Flat = 25.0
+Percent = 0.0

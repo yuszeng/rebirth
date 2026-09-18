@@ -11,28 +11,25 @@ public partial class Main : Node2D
 
 		DrawArena();
 
-		// 加载场景预制体
-		var playerScene = GD.Load<PackedScene>("res://scenes/player.tscn"); // 玩家场景
-		var enemyScene = GD.Load<PackedScene>("res://scenes/enemy.tscn"); // 敌人场景
-
-		// 加载角色、武器、敌人与刷怪配置（Ignore 避免 .tres 外改后仍用旧缓存）
-		var swordData = LoadContent<WeaponData>("res://content/weapons/sword.tres");
-		var playerData = LoadContent<CharacterData>("res://content/characters/wanderer.tres");
-		var enemyData = LoadContent<EnemyData>("res://content/enemies/melee_grunt.tres");
-		var spawnConfig = LoadContent<SpawnConfig>("res://content/spawn/basic_horde.tres");
-
-		// 加载升级选项池（动态抽取，非写死三种）
-		var upgradeAttack = LoadContent<UpgradeOptionData>("res://content/upgrades/attack.tres");
-		var upgradeAttackSpeed = LoadContent<UpgradeOptionData>("res://content/upgrades/attack_speed.tres");
-		var upgradeMoveSpeed = LoadContent<UpgradeOptionData>("res://content/upgrades/move_speed.tres");
+		// 场景按根脚本匹配；数据扫对应目录。角色/刷怪配置里已引用的武器和敌人优先
+		var playerScene = ContentDirectory.FindSceneByRootScript("res://scenes", "Player.cs");
+		var enemyScene = ContentDirectory.FindSceneByRootScript("res://scenes", "Enemy.cs");
+		var playerData = ContentDirectory.RequireOne<CharacterData>("res://content/characters");
+		var spawnConfig = ContentDirectory.RequireOne<SpawnConfig>("res://content/spawn");
+		var fallbackWeapon = ContentDirectory.LoadAll<WeaponData>("res://content/weapons").FirstOrDefault();
+		var fallbackEnemy = ContentDirectory.LoadAll<EnemyData>("res://content/enemies").FirstOrDefault();
+		if (playerScene == null || enemyScene == null || playerData == null || spawnConfig == null)
+		{
+			return;
+		}
 
 		// 创建并配置玩家
 		var player = playerScene.Instantiate<Player>(); // 玩家实例
-		playerData.StartingWeapon ??= swordData; // 未配置初始武器时默认铁剑
+		playerData.StartingWeapon ??= fallbackWeapon; // 角色未配初始武器时用武器目录第一份
 		player.Data = playerData;
 		player.GlobalPosition = Vector2.Zero; // 出生点：场景中心
 		AddChild(player);
-		player.Setup(playerData, swordData); // AddChild 后立即绑定武器（重开时 Autoload 仍存活）
+		player.Setup(playerData, playerData.StartingWeapon); // AddChild 后立即绑定武器（重开时 Autoload 仍存活）
 
 		// 创建刷怪导演，负责按间隔在玩家周围生成敌人
 		var director = new SpawnDirector
@@ -41,25 +38,27 @@ public partial class Main : Node2D
 			Config = spawnConfig,  // 刷怪配置
 			EnemyScene = enemyScene, // 敌人场景
 		};
-		director.Config!.Enemy ??= enemyData; // 配置未指定敌人时使用默认近战小怪
+		director.Config!.Enemy ??= fallbackEnemy; // 配置未指定敌人时用敌人目录第一份
 		AddChild(director);
 
 		// 挂载 UI 层
 		AddChild(new Hud()); // 血条、经验、统计信息
 		AddChild(new LevelUpPanel()); // 升级选项面板
+		AddChild(new ShopPanel()); // 回合结束后的商店
 		AddChild(new GameOverPanel()); // 结算面板
 		AddChild(new PauseMenu()); // ESC 暂停菜单
 
-		// 启动本局：传入玩家与升级池
+		var combatLoop = ContentDirectory.RequireOne<CombatLoopConfig>("res://content/run");
+		var shopConfig = ContentDirectory.RequireOne<ShopConfig>("res://content/run");
+		// 启动本局：升级池 / 商店池扫目录，不必在此逐条注册
 		GameManager.Instance.BeginRun(
 			player,
-			[upgradeAttack, upgradeAttackSpeed, upgradeMoveSpeed],
-			swordData);
+			UpgradeService.LoadPool(),
+			playerData.StartingWeapon,
+			ShopService.LoadPool(),
+			shopConfig,
+			combatLoop);
 	}
-
-	/// <summary>从磁盘加载内容资源，重开场景时也读取最新 .tres。</summary>
-	static T LoadContent<T>(string path) where T : Resource =>
-		ResourceLoader.Load<T>(path, "", ResourceLoader.CacheMode.Ignore);
 
 	/// <summary>场外暗底 + 场内地板 + 细描边；物理墙无外观，避免四条粗杠。</summary>
 	void DrawArena()

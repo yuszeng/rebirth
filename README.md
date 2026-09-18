@@ -1,6 +1,6 @@
 # Rebirth
 
-剑与魔法 Roguelike 动作游戏。玩家控制移动与走位，攻击与成长自动执行；长期目标是「转生 + 世界事件」，当前处于 **Phase 1（基础战斗 MVP）**。
+剑与魔法 Roguelike 动作游戏。玩家控制移动与走位，攻击与成长自动执行；长期目标是「转生 + 世界事件」，当前处于 **Phase 3（60 秒战斗回合 + 商店）**。
 
 - 引擎：Godot 4.4 + C#
 - 玩法逻辑：C#（`src/`）
@@ -21,7 +21,7 @@ dotnet build Rebirth.csproj
 
 在 Godot 编辑器中打开项目，运行主场景 `scenes/main.tscn`。
 
-**操作：** WASD / 方向键移动 · 升级时点击选项 · 死亡后按 R 或点击按钮重开
+**操作：** WASD / 方向键移动 · 升级时点击选项 · 每回合 60 秒后进商店花金币购买/刷新 · 死亡后按 R 或点击按钮重开
 
 ---
 
@@ -51,9 +51,9 @@ rebirth/
 │   │   └── ai/             # 敌人追逐 / 接触伤害
 │   ├── character/          # Combatant、Player、Enemy
 │   │   └── stats/          # 属性系统
-│   ├── progression/        # 成长：经验、金币、升级选项抽取
+│   ├── progression/        # 成长：经验、金币、升级选项、商店
 │   ├── content/            # Resource 数据类型定义（CharacterData 等）
-│   └── ui/                 # HUD、升级面板、结算面板（只读 RunState）
+│   └── ui/                 # HUD、升级、商店、结算（只读 RunState）
 ├── content/                # .tres 内容数据（角色、武器、敌人、升级项、刷怪配置）
 ├── scenes/                 # Godot 场景（main / player / enemy）
 └── docs/                   # 设计、架构、路线文档
@@ -74,7 +74,7 @@ Autoload 全局单例（见 `project.godot`）：
 
 | 对象 | 职责 |
 | --- | --- |
-| `GameManager` | 开局、暂停升级、死亡结算、重开；不包含具体攻击或 AI |
+| `GameManager` | 开局、回合计时、升级、商店、死亡结算、重开；不包含具体攻击或 AI |
 | `EventBus` | 系统间 C# event 解耦（伤害、死亡、升级、金币等） |
 | `GameRng` | 唯一随机源（seed / 加权抽取 / 洗牌） |
 

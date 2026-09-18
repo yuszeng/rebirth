@@ -9,8 +9,11 @@ public partial class RunState : RefCounted
     public int Level { get; set; } = 1; // 当前等级
     public int Xp { get; set; } // 当前等级内的经验值
     public int XpToNext { get; set; } = 10; // 升到下一级所需经验
-    public int Gold { get; set; } // 本局累计金币
+    public int Gold { get; set; } // 本局持有金币（商店会花掉）
     public int PendingLevelUps { get; set; } // 待选择的升级次数（连升时 > 1）
+    public int CombatRound { get; set; } = 1; // 当前战斗回合（从 1 起）
+    public float RoundElapsedSeconds { get; set; } // 本回合已战斗秒数
+    public float RoundDurationSeconds { get; set; } = 60f; // 本回合时长，进商店后重置
 
     /// <summary>将本局数据转为只读结算快照。</summary>
     public RunResult ToResult()

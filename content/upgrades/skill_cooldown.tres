@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeOptionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/UpgradeOptionData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "skill_cooldown"
+DisplayName = "+ 冷却缩减"
+Description = "技能冷却 -8%"
+Stat = 11
+Flat = 0.0
+Percent = 0.08
+Weight = 1.0

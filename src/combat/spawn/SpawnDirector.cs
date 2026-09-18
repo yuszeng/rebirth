@@ -9,6 +9,48 @@ public partial class SpawnDirector : Node
     float _elapsed; // 距上次刷怪已过时间（秒）
     readonly List<Enemy> _alive = []; // 当前存活敌人引用（用于上限控制）
 
+    public override void _Ready()
+    {
+        EventBus.Instance.CombatRoundEnded += ClearField;
+        EventBus.Instance.CombatRoundStarted += OnRoundStarted;
+        EventBus.Instance.RunStarted += OnRunStarted;
+    }
+
+    public override void _ExitTree()
+    {
+        if (EventBus.Instance == null)
+        {
+            return;
+        }
+
+        EventBus.Instance.CombatRoundEnded -= ClearField;
+        EventBus.Instance.CombatRoundStarted -= OnRoundStarted;
+        EventBus.Instance.RunStarted -= OnRunStarted;
+    }
+
+    void OnRunStarted(RunState _) => _elapsed = 0f;
+
+    void OnRoundStarted() => _elapsed = 0f;
+
+    /// <summary>回合结束清场：直接移除，不走击杀奖励。</summary>
+    void ClearField()
+    {
+        var tree = GetTree();
+        if (tree != null)
+        {
+            foreach (var node in tree.GetNodesInGroup("enemies"))
+            {
+                if (node is Enemy enemy && GodotObject.IsInstanceValid(enemy))
+                {
+                    enemy.QueueFree();
+                }
+            }
+        }
+
+        _alive.Clear();
+        _elapsed = 0f;
+    }
+
     // 物理过程处理：每帧检查是否可以刷怪   
     public override void _PhysicsProcess(double delta)
     {

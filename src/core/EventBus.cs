@@ -15,6 +15,11 @@ public partial class EventBus : Node
     public event Action<IReadOnlyList<UpgradeOptionData>>? UpgradeOffered; // 弹出升级选项
     public event Action<UpgradeOptionData>? UpgradeChosen; // 玩家已选择升级
     public event Action<bool>? PauseChanged; // 玩家暂停菜单开关
+    public event Action<ShopStock>? ShopOpened; // 进入商店并展示货架
+    public event Action<ShopStock>? ShopChanged; // 购买或刷新后更新货架
+    public event Action? ShopClosed; // 离开商店
+    public event Action? CombatRoundEnded; // 回合结束清场（不发击杀奖励）
+    public event Action? CombatRoundStarted; // 下一回合战斗开始
 
     public override void _EnterTree()
     {
@@ -37,6 +42,11 @@ public partial class EventBus : Node
         UpgradeOffered = null;
         UpgradeChosen = null;
         PauseChanged = null;
+        ShopOpened = null;
+        ShopChanged = null;
+        ShopClosed = null;
+        CombatRoundEnded = null;
+        CombatRoundStarted = null;
     }
 
     public void EmitRunStarted(RunState run) => InvokeSafe(RunStarted, run); // 触发本局开始事件
@@ -49,6 +59,31 @@ public partial class EventBus : Node
     public void EmitUpgradeOffered(IReadOnlyList<UpgradeOptionData> options) => InvokeSafe(UpgradeOffered, options); // 触发弹出升级选项事件
     public void EmitUpgradeChosen(UpgradeOptionData option) => InvokeSafe(UpgradeChosen, option); // 触发玩家选择升级事件
     public void EmitPauseChanged(bool paused) => InvokeSafe(PauseChanged, paused); // 触发玩家暂停菜单开关事件
+    public void EmitShopOpened(ShopStock stock) => InvokeSafe(ShopOpened, stock);
+    public void EmitShopChanged(ShopStock stock) => InvokeSafe(ShopChanged, stock);
+    public void EmitShopClosed() => InvokeSafe(ShopClosed);
+    public void EmitCombatRoundEnded() => InvokeSafe(CombatRoundEnded);
+    public void EmitCombatRoundStarted() => InvokeSafe(CombatRoundStarted);
+
+    static void InvokeSafe(Action? handler)
+    {
+        if (handler == null)
+        {
+            return;
+        }
+
+        foreach (var d in handler.GetInvocationList())
+        {
+            try
+            {
+                ((Action)d)();
+            }
+            catch (Exception ex)
+            {
+                GameLog.Error($"EventBus 回调失败: {ex.Message}");
+            }
+        }
+    }
 
     static void InvokeSafe<T>(Action<T>? handler, T arg) // 安全调用事件回调
     {

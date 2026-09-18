@@ -3,8 +3,14 @@ namespace Rebirth.Progression;
 /// <summary>从数据池抽选项。UI 只展示返回值，不写死三种属性。</summary>
 public sealed class UpgradeService
 {
+    public const string DefaultPoolDirectory = "res://content/upgrades";
+
     public List<UpgradeOptionData> Pool { get; set; } = []; // 可选升级项全集
     public int OfferCount { get; set; } = 3; // 每次弹出几个选项
+
+    /// <summary>扫描目录下所有 UpgradeOptionData，新增 .tres 后无需改 BeginRun。</summary>
+    public static List<UpgradeOptionData> LoadPool(string directory = DefaultPoolDirectory) =>
+        ContentDirectory.LoadAll<UpgradeOptionData>(directory);
 
     /// <summary>加权随机抽取 OfferCount 个不重复升级项。</summary>
     public List<UpgradeOptionData> Offer()

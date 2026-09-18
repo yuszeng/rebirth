@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_damage_bonus"
+DisplayName = "战意纹章"
+Description = "伤害加成 +10%"
+Price = 16
+Weight = 0.8
+Stat = 17
+Flat = 0.0
+Percent = 0.1

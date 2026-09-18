@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="UpgradeOptionData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/UpgradeOptionData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "crit_rate"
+DisplayName = "+ 暴击率"
+Description = "暴击率 +5%"
+Stat = 6
+Flat = 0.0
+Percent = 0.05
+Weight = 1.0

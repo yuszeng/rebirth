@@ -33,11 +33,11 @@ src/combat/            战斗
   ai/                  敌人移动 / 接触攻击
 src/character/         角色实体（Combatant、Player、Enemy）
   stats/               属性：StatType、StatModifier、CharacterStats
-src/progression/       成长：经验、金币、升级选项（商店以后放这里）
+src/progression/       成长：经验、金币、升级选项、商店
 src/content/           数据资源类型（SkillData 等按 Phase 增加）
 src/world/             世界状态（Phase 12 前不要堆实现）
 src/meta/              转生/羁绊/解锁（Phase 10+）
-src/ui/                HUD / 升级 / 结算，只读 RunState
+src/ui/                HUD / 升级 / 商店 / 结算，只读 RunState
 content/               .tres 内容数据
 scenes/                场景
 ```
@@ -50,12 +50,12 @@ scenes/                场景
 
 | 对象 | 职责 |
 | --- | --- |
-| `GameState` | 流程枚举。Phase 1 使用 `IN_RUN` / `LEVEL_UP` / `GAME_OVER`。预留 `SHOP` / `ENCOUNTER` / `REINCARNATION` |
+| `GameState` | 流程枚举。当前使用 `IN_RUN` / `LEVEL_UP` / `SHOP` / `GAME_OVER`。预留 `ENCOUNTER` / `REINCARNATION` |
 | `RunState` | **仅这一世**的可变进度 |
 | `PersistentState` | 跨转生；Phase 1 只保留空壳类型，不实现存档 |
 | `EventBus` | 全局 C# event。系统之间优先事件，而不是互相找节点硬引用 |
 | `GameRng` | 唯一随机源：seed / weighted / choice / shuffle |
-| `GameManager` | 开局、暂停升级、死亡结算、重开。不包含具体攻击或 AI |
+| `GameManager` | 开局、回合计时、升级、商店、死亡结算、重开。不包含具体攻击或 AI |
 
 战斗与剧情解耦：无限模式应能只跑 Combat + Content，不依赖 World/Story。
 
@@ -84,7 +84,7 @@ Player → AttackController → Weapon → TargetingSystem
 
 ## 数据驱动
 
-内容用 Resource（`WeaponData`、`EnemyData`、`UpgradeOptionData`、`CharacterData`）。
+内容用 Resource（`WeaponData`、`EnemyData`、`UpgradeOptionData`、`CharacterData`、`ShopItemData`、`ShopConfig`、`CombatLoopConfig`）。
 
 新增一种剑、一种怪、一个升级选项：优先加 `.tres`，而不是改 match 字符串。
 
@@ -106,4 +106,4 @@ Player → AttackController → Weapon → TargetingSystem
 - `TargetingSystem.Strategy` 预留策略枚举，Phase 1 只实现最近目标
 - `DamageRequest.tags`：给未来元素/技能识别，当前不做分支
 
-不要提前实现 Skill / Equipment / Shop / Companion / Encounter / DemonKing 的运转逻辑。
+不要提前实现 Skill / Equipment / Companion / Encounter / DemonKing 的运转逻辑。商店只卖抽象可购买项。
