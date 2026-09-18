@@ -2,7 +2,7 @@ namespace Rebirth.Combat;
 
 /// <summary>
 /// 扇形挥砍表现：Sweep/Blade 负责剑刃贴图摆动，根节点不旋转以便画出与判定一致的扇面。
-/// 替换素材：给 Blade 换 Texture，或在武器资源上指定 AttackVfxTexture；有 Trail 贴图时不再画程序扇面。
+/// 替换素材：给 Blade 换 Texture，或在攻击模式资源上指定 AttackVfxTexture；有 Trail 贴图时不再画程序扇面。
 /// </summary>
 public partial class SlashVfx : AttackVfx
 {

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/skills/bolt.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_bolt"
+DisplayName = "技能：点射"
+Description = "购入后可按 E 切换为点射攻击。"
+Price = 16
+Weight = 0.8
+Skill = ExtResource("2")

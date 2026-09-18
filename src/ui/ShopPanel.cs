@@ -120,9 +120,18 @@ public partial class ShopPanel : CanvasLayer
             }
             else
             {
-                button.Text = $"{item.DisplayName}\n{item.Description}\n{item.Price} 金币";
-                button.Disabled = stock.Gold < item.Price;
-                button.Pressed += () => GameManager.Instance.BuyShopItem(slotIndex);
+                var owned = item.Skill != null && GameManager.Instance.Run.OwnedSkillIds.Contains(item.Skill.Id);
+                if (owned)
+                {
+                    button.Text = $"{item.DisplayName}\n已拥有\n{item.Price} 金币";
+                    button.Disabled = true;
+                }
+                else
+                {
+                    button.Text = $"{item.DisplayName}\n{item.Description}\n{item.Price} 金币";
+                    button.Disabled = stock.Gold < item.Price;
+                    button.Pressed += () => GameManager.Instance.BuyShopItem(slotIndex);
+                }
             }
 
             _grid.AddChild(button);

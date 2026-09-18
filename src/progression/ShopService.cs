@@ -32,6 +32,9 @@ public sealed class ShopService
         Slots = _slots.ToList(),
     };
 
+    public ShopItemData? Peek(int slotIndex) =>
+        slotIndex >= 0 && slotIndex < _slots.Count ? _slots[slotIndex] : null;
+
     /// <summary>花费金币换一批货。金币不足则失败。</summary>
     public bool TryRefresh(Wallet wallet, RunState run)
     {

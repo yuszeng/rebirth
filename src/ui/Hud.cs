@@ -29,6 +29,7 @@ public partial class Hud : CanvasLayer
 		EventBus.Instance.XpGained += OnHudPairEvent;
 		EventBus.Instance.GoldGained += OnHudPairEvent;
 		EventBus.Instance.LevelUp += OnHudLevelEvent;
+		EventBus.Instance.AttackModeChanged += OnAttackModeChanged;
 	}
 
 	public override void _ExitTree()
@@ -44,6 +45,7 @@ public partial class Hud : CanvasLayer
 		EventBus.Instance.XpGained -= OnHudPairEvent;
 		EventBus.Instance.GoldGained -= OnHudPairEvent;
 		EventBus.Instance.LevelUp -= OnHudLevelEvent;
+		EventBus.Instance.AttackModeChanged -= OnAttackModeChanged;
 	}
 
 	public override void _Process(double _delta) => Refresh(); // 每帧刷新存活时间与属性
@@ -52,6 +54,7 @@ public partial class Hud : CanvasLayer
 	void OnDamageApplied(DamageRequest _, float _amount) => Refresh();
 	void OnHudPairEvent(int _a, int _b) => Refresh();
 	void OnHudLevelEvent(int _) => Refresh();
+	void OnAttackModeChanged(string _) => Refresh();
 
 	/// <summary>创建根容器。</summary>
 	Control CreateRoot()
@@ -97,7 +100,7 @@ public partial class Hud : CanvasLayer
 		panel.OffsetLeft = -268;
 		panel.OffsetRight = -24;
 		panel.OffsetTop = 24;
-		panel.OffsetBottom = 236;
+		panel.OffsetBottom = 268;
 		parent.AddChild(panel);
 
 		var label = new Label
@@ -134,6 +137,38 @@ public partial class Hud : CanvasLayer
 		_attributes.Text = FormatAttributes(player);
 	}
 
+	static string FormatAttackModes(Player? player)
+	{
+		var selected = GameManager.Instance.Run.SelectedAttackModeId;
+		var controller = player?.GetNodeOrNull<SkillController>("SkillController");
+		if (controller == null || controller.Skills.Count == 0)
+		{
+			return $"当前攻击 {FormatCurrentAttackName(player, selected)}\n可切换技能 无";
+		}
+
+		var parts = controller.Skills.Select(skill =>
+		{
+			var cd = skill.Remaining > 0.05f ? $"{skill.Remaining:0.0}s" : "就绪";
+			var current = skill.Data.Id == selected ? "当前 " : "";
+			return $"{current}{skill.Data.DisplayName} {cd}";
+		});
+		return
+			$"当前攻击 {FormatCurrentAttackName(player, selected)}\n" +
+			"可切换技能 " + string.Join(" · ", parts);
+	}
+
+	static string FormatCurrentAttackName(Player? player, string selected)
+	{
+		if (selected == RunState.BasicAttackModeId)
+		{
+			return player?.GetNodeOrNull<Weapon>("Weapon")?.Data?.DisplayName ?? "普通攻击";
+		}
+
+		var skill = player?.GetNodeOrNull<SkillController>("SkillController")?.Skills
+			.FirstOrDefault(runtime => runtime.Data.Id == selected);
+		return skill?.Data.DisplayName ?? "普通攻击";
+	}
+
 	static string FormatAttributes(Player? player)
 	{
 		if (player?.Stats == null)
@@ -144,7 +179,12 @@ public partial class Hud : CanvasLayer
 		var stats = player.Stats;
 		var weapon = player.GetNodeOrNull<Weapon>("Weapon")?.Data;
 		var weaponName = weapon?.DisplayName ?? "-";
-		var maxTargets = weapon?.MaxTargets ?? 0;
+		var weaponTargetText = weapon?.Pattern?.Kind is AttackPatternKind.InstantCircleAroundSelf
+			or AttackPatternKind.SweptCircleAroundSelf
+			or AttackPatternKind.InstantSector
+			or AttackPatternKind.SweptSector
+			? "范围命中"
+			: $"最多 {weapon?.Pattern?.MaxTargets ?? 0} 目标";
 		return
 			$"当前属性\n" +
 			$"生命 {Mathf.RoundToInt(stats.GetValue(StatType.MaxHp))}\n" +
@@ -152,6 +192,7 @@ public partial class Hud : CanvasLayer
 			$"攻速 {stats.GetValue(StatType.AttackSpeed):0.00}/秒\n" +
 			$"移速 {Mathf.RoundToInt(stats.GetValue(StatType.MoveSpeed))}\n" +
 			$"范围 {Mathf.RoundToInt(stats.GetValue(StatType.AttackRange))}\n" +
-			$"武器 {weaponName}（最多 {maxTargets} 目标）";
+			$"武器 {weaponName}（{weaponTargetText}）\n" +
+			FormatAttackModes(player);
 	}
 }

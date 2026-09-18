@@ -22,7 +22,7 @@ public partial class CharacterData : Resource
         stats.SetBase(StatType.Attack, BaseAttack);
         stats.SetBase(StatType.AttackSpeed, BaseAttackSpeed);
         stats.SetBase(StatType.MoveSpeed, BaseMoveSpeed);
-        stats.SetBase(StatType.AttackRange, StartingWeapon?.AttackRange ?? 78f);
+        stats.SetBase(StatType.AttackRange, StartingWeapon?.Pattern?.Range ?? 78f);
         return stats;
     }
 }

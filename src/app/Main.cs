@@ -45,6 +45,7 @@ public partial class Main : Node2D
 		AddChild(new Hud()); // 血条、经验、统计信息
 		AddChild(new LevelUpPanel()); // 升级选项面板
 		AddChild(new ShopPanel()); // 回合结束后的商店
+		AddChild(new AttackModePanel()); // 战斗中的攻击方式选择
 		AddChild(new GameOverPanel()); // 结算面板
 		AddChild(new PauseMenu()); // ESC 暂停菜单
 

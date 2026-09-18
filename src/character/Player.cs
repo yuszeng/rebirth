@@ -54,7 +54,21 @@ public partial class Player : Combatant
         GetNodeOrNull<Weapon>("Weapon")?.Configure(weaponData); // 配置武器
         _attackController ??= GetNodeOrNull<AttackController>("AttackController"); // 获取攻击控制器
         _attackController?.Setup(weaponData); // 设置攻击控制器
+        GetNodeOrNull<SkillController>("SkillController")?.Clear();
     }
+
+    public bool HasSkill(string skillId) =>
+        GetNodeOrNull<SkillController>("SkillController")?.Has(skillId) ?? false;
+
+    public bool CanGrantSkill(SkillData skill)
+    {
+        var controller = GetNodeOrNull<SkillController>("SkillController");
+        return controller != null && !controller.Has(skill.Id);
+    }
+
+    /// <summary>把技能交给 SkillController，Player 不负责释放或选敌。</summary>
+    public bool TryGrantSkill(SkillData skill) =>
+        GetNodeOrNull<SkillController>("SkillController")?.TryGrant(skill) ?? false;
 
     /// <summary>应用升级选项：添加属性修饰器，必要时按比例调整当前血量上限。</summary>
     public void ApplyUpgrade(UpgradeOptionData option)

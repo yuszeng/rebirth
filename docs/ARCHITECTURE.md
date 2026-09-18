@@ -2,6 +2,8 @@
 
 引擎：**Godot 4.4.1 + C#**（`Godot.NET.Sdk`）。2D。逻辑用 C#，内容用 Resource（`.tres`）。
 
+**进度：** Phase 1–4 已落地（战斗 MVP、升级池、回合商店、攻击方式切换）。不要为 Phase 5+ 提前写完整系统。
+
 原则：**当前内容极简，模块边界清晰。**  
 不为未来提前写完整系统；但当前系统若必然扩展，则留下稳定接口。
 
@@ -29,6 +31,7 @@ src/core/              引擎级运行时（GameManager、EventBus）
 src/combat/            战斗
   damage/              伤害请求、结算、生命
   attack/              武器、自动攻击、目标选择
+  skill/               技能攻击方式与冷却
   spawn/               刷怪
   ai/                  敌人移动 / 接触攻击
 src/character/         角色实体（Combatant、Player、Enemy）
@@ -50,12 +53,12 @@ scenes/                场景
 
 | 对象 | 职责 |
 | --- | --- |
-| `GameState` | 流程枚举。当前使用 `IN_RUN` / `LEVEL_UP` / `SHOP` / `GAME_OVER`。预留 `ENCOUNTER` / `REINCARNATION` |
-| `RunState` | **仅这一世**的可变进度 |
-| `PersistentState` | 跨转生；Phase 1 只保留空壳类型，不实现存档 |
+| `GameState` | 流程枚举。当前使用 `InRun` / `LevelUp` / `Shop` / `GameOver`。预留 `Encounter` / `Reincarnation` |
+| `RunState` | **仅这一世**的可变进度（含回合计时、待选升级、金币、已购技能 Id） |
+| `PersistentState` | 跨转生；仍只保留空壳类型，不实现存档 |
 | `EventBus` | 全局 C# event。系统之间优先事件，而不是互相找节点硬引用 |
 | `GameRng` | 唯一随机源：seed / weighted / choice / shuffle |
-| `GameManager` | 开局、回合计时、升级、商店、死亡结算、重开。不包含具体攻击或 AI |
+| `GameManager` | 开局、回合计时、升级、商店、死亡结算、重开。不包含具体攻击或 AI；购买后把属性或技能交给对应模块 |
 
 战斗与剧情解耦：无限模式应能只跑 Combat + Content，不依赖 World/Story。
 
@@ -67,24 +70,27 @@ scenes/                场景
 
 所有来源（升级、未来装备/技能/加护/队友）只能通过 Modifier 改属性，禁止各系统直接改散落字段。
 
-当前实际使用：`MAX_HP` `ATTACK` `ATTACK_SPEED` `MOVE_SPEED`。  
-枚举可预留未来项，但不要为未用属性写专门逻辑。
+战斗实际生效：`MaxHp` `Attack` `AttackSpeed` `MoveSpeed` `AttackRange`。  
+升级/商店池已可挂更多 `StatType`（防御、暴击、闪避等），但 `DamageSystem` 仍只做直伤下限截断，不要提前写完整暴击/护盾系统。
 
 ## 攻击与伤害管道
 
 ```
 Player → AttackController → Weapon → TargetingSystem
        → DamageRequest → DamageSystem → Health → Death → EventBus
+
+Player → SkillController → TargetingSystem / AreaHitSystem
+       → DamageRequest → DamageSystem → Health → Death → EventBus
 ```
 
-- Player **不知道**当前是不是剑
-- Weapon **不内置**“找最近敌人”，一律问 TargetingSystem
+- Player **不知道**当前是不是剑，也不负责技能释放
+- Weapon / Skill **不内置**“找最近敌人”，一律问 TargetingSystem（范围伤走 AreaHitSystem）
 - 任何扣血（含敌人接触伤害）都走 DamageSystem
-- 暴击/防御/元素/护盾/吸血/异常在 DamageSystem **预留计算插口**，Phase 1 只做直伤
+- 暴击/防御/元素/护盾/吸血/异常在 DamageSystem **预留计算插口**，当前仍只做直伤
 
 ## 数据驱动
 
-内容用 Resource（`WeaponData`、`EnemyData`、`UpgradeOptionData`、`CharacterData`、`ShopItemData`、`ShopConfig`、`CombatLoopConfig`）。
+内容用 Resource（`WeaponData`、`EnemyData`、`UpgradeOptionData`、`CharacterData`、`ShopItemData`、`ShopConfig`、`CombatLoopConfig`、`SkillData`）。
 
 新增一种剑、一种怪、一个升级选项：优先加 `.tres`，而不是改 match 字符串。
 
@@ -106,4 +112,4 @@ Player → AttackController → Weapon → TargetingSystem
 - `TargetingSystem.Strategy` 预留策略枚举，Phase 1 只实现最近目标
 - `DamageRequest.tags`：给未来元素/技能识别，当前不做分支
 
-不要提前实现 Skill / Equipment / Companion / Encounter / DemonKing 的运转逻辑。商店只卖抽象可购买项。
+不要提前实现 Equipment / Companion / Encounter / DemonKing 的运转逻辑。商店卖抽象可购买项（属性 Modifier 或 SkillData 引用）。

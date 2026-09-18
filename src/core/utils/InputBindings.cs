@@ -11,6 +11,7 @@ public static class InputBindings
         BindKeys("move_down", [Key.S, Key.Down]); // 下移
         BindKeys("restart", [Key.R]); // 重新开始
         BindKeys("pause", [Key.Escape]); // 暂停菜单
+        BindKeys("attack_mode_menu", [Key.E]); // 攻击方式选择
     }
 
     /// <summary>将多个按键绑定到同一 InputMap 动作。</summary>

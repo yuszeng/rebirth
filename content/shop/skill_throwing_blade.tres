@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/skills/throwing_blade.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_throwing_blade"
+DisplayName = "技能：飞刃"
+Description = "购入后可按 E 切换为飞刃攻击。"
+Price = 17
+Weight = 0.8
+Skill = ExtResource("2")

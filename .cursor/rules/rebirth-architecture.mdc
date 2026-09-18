@@ -11,12 +11,12 @@ alwaysApply: true
 - `docs/ARCHITECTURE.md`
 - `docs/ROADMAP.md`
 
-当前只做 **Phase 3（60 秒回合 + 商店）**。未接到明确指令时，禁止进入 Phase 4+（不要借机实现技能、装备、队友、奇遇、转生、魔王、剧情）。
+**Phase 4（商店技能 + 按 E 切换攻击方式）已完成。** 未接到明确指令时，禁止进入 Phase 5+（不要借机实现装备、魔法、宝物、队友、奇遇、转生、魔王、剧情）。
 
 ## 必须
 
 - 使用 **C#**（不要新增 GDScript 玩法代码）
-- 在现有 `src/core|combat|character|progression|content` 边界上扩展（子目录：`core/state`、`core/utils`、`combat/damage|attack|spawn|ai`、`character/stats`）
+- 在现有 `src/core|combat|character|progression|content` 边界上扩展（子目录：`core/state`、`core/utils`、`combat/damage|attack|skill|spawn|ai`、`character/stats`）
 - 内容用 Resource；属性用 `CharacterStats` + `StatModifier`
 - 扣血走 `DamageSystem`；找目标走 `TargetingSystem`；随机走 `GameRng`
 - 升级选项动态生成，禁止写死三个按钮逻辑
@@ -29,4 +29,4 @@ alwaysApply: true
 - 把商店/技能/装备塞进 Player
 - 推翻现有攻击/伤害管道另起一套
 
-完成后运行并修当前 Phase，等待下一步指令。
+修当前已交付范围时保持可运行；等待下一步指令再开新 Phase。

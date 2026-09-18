@@ -3,6 +3,8 @@ namespace Rebirth.Core;
 /// <summary>只属于这一世的进度。跨转生数据不得放这里。</summary>
 public partial class RunState : RefCounted
 {
+    public const string BasicAttackModeId = "basic"; // 普通攻击的稳定标识
+
     public bool IsAlive { get; set; } = true; // 玩家是否仍存活
     public float ElapsedSeconds { get; set; } // 本局已存活秒数
     public int KillCount { get; set; } // 击杀数
@@ -14,6 +16,8 @@ public partial class RunState : RefCounted
     public int CombatRound { get; set; } = 1; // 当前战斗回合（从 1 起）
     public float RoundElapsedSeconds { get; set; } // 本回合已战斗秒数
     public float RoundDurationSeconds { get; set; } = 60f; // 本回合时长，进商店后重置
+    public List<string> OwnedSkillIds { get; } = []; // 本局已购技能 Id，不跨转生
+    public string SelectedAttackModeId { get; set; } = BasicAttackModeId; // 当前攻击方式：普通攻击或已购技能 Id
 
     /// <summary>将本局数据转为只读结算快照。</summary>
     public RunResult ToResult()

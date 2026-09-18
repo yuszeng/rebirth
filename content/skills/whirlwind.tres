@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/SkillData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/attack_patterns/whirlwind.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "whirlwind"
+DisplayName = "旋风斩"
+Description = "作为当前攻击方式时，按冷却挥出旋转剑刃，碰到周围敌人后造成范围伤害。"
+Cooldown = 3.0
+Damage = 8.0
+AttackScale = 0.6
+Pattern = ExtResource("2")
+DamageTags = PackedStringArray("skill", "area")

@@ -12,6 +12,9 @@ public partial class ShopItemData : Resource
     [Export] public StatType Stat { get; set; } = StatType.Attack;
     [Export] public float Flat { get; set; }
     [Export] public float Percent { get; set; }
+    [Export] public SkillData? Skill { get; set; }
+
+    public bool GrantsSkill => Skill != null;
 
     public StatModifier ToModifier(string sourceId) => new()
     {

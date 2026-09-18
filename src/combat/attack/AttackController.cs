@@ -53,6 +53,11 @@ public partial class AttackController : Node
             return; // 如果不是本局进行中则直接返回
         }
 
+        if (GameManager.Instance.Run.SelectedAttackModeId != RunState.BasicAttackModeId)
+        {
+            return; // 当前选择技能攻击时，武器普攻停用
+        }
+
         EnsureWeaponReady(); // 确保武器准备好
 
         if (_owner?.Health == null || _owner.Health.IsDead || _weapon?.Data == null)

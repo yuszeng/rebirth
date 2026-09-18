@@ -117,6 +117,11 @@ public partial class GameManager : Node
                 PauseRun();
             }
         }
+
+        if (Input.IsActionJustPressed("attack_mode_menu") && State == GameState.InRun)
+        {
+            OpenAttackModeSelection();
+        }
     }
 
     /// <summary>角色死亡回调：玩家死亡则结束本局，敌人死亡则结算奖励。</summary>
@@ -301,14 +306,31 @@ public partial class GameManager : Node
             return;
         }
 
+        var pending = _shop.Peek(slotIndex);
+        if (pending?.Skill != null && (_player == null || !_player.CanGrantSkill(pending.Skill)))
+        {
+            return;
+        }
+
         var item = _shop.TryBuy(slotIndex, _wallet, Run);
         if (item == null)
         {
             return;
         }
 
-        _shopPurchaseSerial += 1;
-        _player?.ApplyStatModifier(item.ToModifier($"shop_{Run.CombatRound}_{_shopPurchaseSerial}_{item.Id}"));
+        if (item.Skill != null)
+        {
+            if (_player != null && _player.TryGrantSkill(item.Skill) && !Run.OwnedSkillIds.Contains(item.Skill.Id))
+            {
+                Run.OwnedSkillIds.Add(item.Skill.Id);
+            }
+        }
+        else
+        {
+            _shopPurchaseSerial += 1;
+            _player?.ApplyStatModifier(item.ToModifier($"shop_{Run.CombatRound}_{_shopPurchaseSerial}_{item.Id}"));
+        }
+
         EventBus.Instance.EmitShopChanged(_shop.Snapshot(Run));
     }
 
@@ -327,6 +349,82 @@ public partial class GameManager : Node
 
         EventBus.Instance.EmitShopChanged(_shop.Snapshot(Run));
     }
+
+    /// <summary>战斗中打开攻击方式选择。选择期间暂停，避免玩家被 UI 操作惩罚。</summary>
+    public void OpenAttackModeSelection()
+    {
+        if (State != GameState.InRun || !Run.IsAlive)
+        {
+            return;
+        }
+
+        IsUserPaused = false;
+        State = GameState.AttackModeSelect;
+        GetTree().Paused = true;
+        EventBus.Instance.EmitPauseChanged(false);
+        EventBus.Instance.EmitAttackModeSelectionOpened(BuildAttackModeStock());
+    }
+
+    /// <summary>选择当前攻击方式：普通攻击始终可选，技能必须已购入。</summary>
+    public void ChooseAttackMode(string modeId)
+    {
+        if (State != GameState.AttackModeSelect || !CanSelectAttackMode(modeId))
+        {
+            return;
+        }
+
+        Run.SelectedAttackModeId = modeId;
+        State = GameState.InRun;
+        GetTree().Paused = false;
+        EventBus.Instance.EmitAttackModeChanged(modeId);
+        EventBus.Instance.EmitAttackModeSelectionClosed();
+    }
+
+    public void CancelAttackModeSelection()
+    {
+        if (State != GameState.AttackModeSelect)
+        {
+            return;
+        }
+
+        State = GameState.InRun;
+        GetTree().Paused = false;
+        EventBus.Instance.EmitAttackModeSelectionClosed();
+    }
+
+    AttackModeStock BuildAttackModeStock()
+    {
+        var options = new List<AttackModeOption>
+        {
+            new()
+            {
+                Id = RunState.BasicAttackModeId,
+                DisplayName = "普通攻击",
+                Description = "使用当前武器自动攻击。",
+            },
+        };
+
+        var controller = _player?.GetNodeOrNull<SkillController>("SkillController");
+        if (controller != null)
+        {
+            options.AddRange(controller.Skills.Select(skill => new AttackModeOption
+            {
+                Id = skill.Data.Id,
+                DisplayName = skill.Data.DisplayName,
+                Description = skill.Data.Description,
+                Skill = skill.Data,
+            }));
+        }
+
+        return new AttackModeStock
+        {
+            SelectedModeId = Run.SelectedAttackModeId,
+            Options = options,
+        };
+    }
+
+    bool CanSelectAttackMode(string modeId) =>
+        modeId == RunState.BasicAttackModeId || Run.OwnedSkillIds.Contains(modeId);
 
     /// <summary>离开商店，清零回合计时并开始下一回合战斗。</summary>
     public void LeaveShop()

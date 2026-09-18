@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="SkillData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/SkillData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/attack_patterns/bolt.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "bolt"
+DisplayName = "点射"
+Description = "作为当前攻击方式时，按冷却打击最近的一名敌人。"
+Cooldown = 2.0
+Damage = 6.0
+AttackScale = 0.8
+Pattern = ExtResource("2")
+DamageTags = PackedStringArray("skill", "ranged")

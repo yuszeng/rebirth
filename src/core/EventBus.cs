@@ -20,6 +20,9 @@ public partial class EventBus : Node
     public event Action? ShopClosed; // 离开商店
     public event Action? CombatRoundEnded; // 回合结束清场（不发击杀奖励）
     public event Action? CombatRoundStarted; // 下一回合战斗开始
+    public event Action<AttackModeStock>? AttackModeSelectionOpened; // 打开攻击方式选择
+    public event Action? AttackModeSelectionClosed; // 关闭攻击方式选择
+    public event Action<string>? AttackModeChanged; // 当前攻击方式已切换
 
     public override void _EnterTree()
     {
@@ -47,6 +50,9 @@ public partial class EventBus : Node
         ShopClosed = null;
         CombatRoundEnded = null;
         CombatRoundStarted = null;
+        AttackModeSelectionOpened = null;
+        AttackModeSelectionClosed = null;
+        AttackModeChanged = null;
     }
 
     public void EmitRunStarted(RunState run) => InvokeSafe(RunStarted, run); // 触发本局开始事件
@@ -64,6 +70,9 @@ public partial class EventBus : Node
     public void EmitShopClosed() => InvokeSafe(ShopClosed);
     public void EmitCombatRoundEnded() => InvokeSafe(CombatRoundEnded);
     public void EmitCombatRoundStarted() => InvokeSafe(CombatRoundStarted);
+    public void EmitAttackModeSelectionOpened(AttackModeStock stock) => InvokeSafe(AttackModeSelectionOpened, stock);
+    public void EmitAttackModeSelectionClosed() => InvokeSafe(AttackModeSelectionClosed);
+    public void EmitAttackModeChanged(string modeId) => InvokeSafe(AttackModeChanged, modeId);
 
     static void InvokeSafe(Action? handler)
     {
