@@ -7,6 +7,9 @@
 script = ExtResource("1")
 Id = "sword"
 DisplayName = "铁剑"
+Description = "近距离扇形挥砍，稳定覆盖身前敌人。"
+AttackScale = 1.0
 BonusDamage = 0.0
+AttackSpeedScale = 1.0
 Pattern = ExtResource("2")
 DamageTags = PackedStringArray("weapon", "melee", "area")

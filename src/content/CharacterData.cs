@@ -15,14 +15,23 @@ public partial class CharacterData : Resource
     [Export] public WeaponData? StartingWeapon { get; set; } // 初始武器
 
     /// <summary>从导出字段构建 CharacterStats 基础属性。</summary>
-    public CharacterStats BuildStats()
+    public CharacterStats BuildStats(WeaponData? weaponOverride = null)
     {
         var stats = new CharacterStats();
         stats.SetBase(StatType.MaxHp, BaseMaxHp);
         stats.SetBase(StatType.Attack, BaseAttack);
         stats.SetBase(StatType.AttackSpeed, BaseAttackSpeed);
         stats.SetBase(StatType.MoveSpeed, BaseMoveSpeed);
-        stats.SetBase(StatType.AttackRange, StartingWeapon?.Pattern?.Range ?? 78f);
+        stats.SetBase(StatType.AttackRange, (weaponOverride ?? StartingWeapon)?.Pattern?.Range ?? 78f);
+        stats.SetBase(StatType.Defense, 0f);
+        stats.SetBase(StatType.CritRate, 0f);
+        stats.SetBase(StatType.CritDamage, 2f);
+        stats.SetBase(StatType.Dodge, 0f);
+        stats.SetBase(StatType.Lifesteal, 0f);
+        stats.SetBase(StatType.DamageBonus, 0f);
+        stats.SetBase(StatType.Area, 0f);
+        stats.SetBase(StatType.ProjectileSpeed, 0f);
+        stats.SetBase(StatType.Duration, 0f);
         return stats;
     }
 }

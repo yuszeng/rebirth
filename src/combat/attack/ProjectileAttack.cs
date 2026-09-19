@@ -10,6 +10,9 @@ public partial class ProjectileAttack : Node2D
     float _remainingDistance = 160f;
     float _damage;
     string[] _tags = [];
+    readonly HashSet<ulong> _alreadyHit = [];
+    int _maxHits = 1;
+    int _hitCount;
     bool _configured;
 
     public static void Spawn(
@@ -20,7 +23,8 @@ public partial class ProjectileAttack : Node2D
         AttackPatternData pattern,
         float maxDistance,
         float damage,
-        string[] tags)
+        string[] tags,
+        int maxHits = 1)
     {
         var direction = targetPoint - origin;
         if (direction.LengthSquared() < 0.0001f)
@@ -28,21 +32,48 @@ public partial class ProjectileAttack : Node2D
             direction = Vector2.Right;
         }
 
-        var projectile = new ProjectileAttack();
-        parent.AddChild(projectile);
-        projectile.GlobalPosition = origin;
-        projectile.Configure(source, direction, pattern, maxDistance, damage, tags);
+        SpawnDirected(parent, source, origin, direction, pattern, maxDistance, damage, tags, maxHits);
     }
 
-    void Configure(Combatant source, Vector2 direction, AttackPatternData pattern, float maxDistance, float damage, string[] tags)
+    public static void SpawnDirected(
+        Node parent,
+        Combatant source,
+        Vector2 origin,
+        Vector2 direction,
+        AttackPatternData pattern,
+        float maxDistance,
+        float damage,
+        string[] tags,
+        int maxHits = 1)
+    {
+        var projectile = new ProjectileAttack
+        {
+            ProcessMode = ProcessModeEnum.Always,
+        };
+        parent.AddChild(projectile);
+        projectile.GlobalPosition = origin;
+        projectile.Configure(source, direction, pattern, maxDistance, damage, tags, maxHits);
+    }
+
+    void Configure(
+        Combatant source,
+        Vector2 direction,
+        AttackPatternData pattern,
+        float maxDistance,
+        float damage,
+        string[] tags,
+        int maxHits)
     {
         _source = source;
-        _direction = direction.Normalized();
-        _speed = Math.Max(pattern.ProjectileSpeed, 1f);
-        _radius = Math.Max(pattern.ProjectileRadius, 1f);
+        _direction = direction.LengthSquared() < 0.0001f ? Vector2.Right : direction.Normalized();
+        _speed = CombatStatScale.ProjectileSpeed(source, Math.Max(pattern.ProjectileSpeed, 1f));
+        _radius = Math.Max(CombatStatScale.Range(source, pattern.ProjectileRadius), 1f);
         _remainingDistance = Math.Max(maxDistance, _radius);
         _damage = damage;
         _tags = tags;
+        _maxHits = maxHits <= 0 ? int.MaxValue : maxHits;
+        _alreadyHit.Clear();
+        _hitCount = 0;
         _configured = true;
 
         Rotation = _direction.Angle();
@@ -54,6 +85,11 @@ public partial class ProjectileAttack : Node2D
         if (!_configured || GameManager.Instance.State != GameState.InRun)
         {
             QueueFree();
+            return;
+        }
+
+        if (GetTree().Paused)
+        {
             return;
         }
 
@@ -83,6 +119,7 @@ public partial class ProjectileAttack : Node2D
         DrawLine(Vector2.Zero, Vector2.Left * _radius * 1.6f, new Color(1f, 0.95f, 0.65f, 0.7f), _radius * 0.6f);
     }
 
+    /// <summary>返回 true 表示投射物达到命中上限并已排队销毁。</summary>
     bool TryHitAlong(float travel)
     {
         var step = Math.Max(_radius * 0.75f, 2f);
@@ -104,7 +141,7 @@ public partial class ProjectileAttack : Node2D
         var targets = TargetingSystem.Select(
             position,
             0f,
-            GetTree().GetNodesInGroup("enemies"),
+            UnhitCandidates(),
             _radius,
             TargetingStrategy.Nearest,
             maxTargets: 1);
@@ -120,7 +157,30 @@ public partial class ProjectileAttack : Node2D
             Amount = _damage,
             Tags = _tags,
         });
+        _alreadyHit.Add(targets[0].GetInstanceId());
+        _hitCount++;
+        if (_hitCount < _maxHits)
+        {
+            return false;
+        }
+
         QueueFree();
         return true;
+    }
+
+    IEnumerable<Node> UnhitCandidates()
+    {
+        foreach (var node in GetTree().GetNodesInGroup("enemies"))
+        {
+            if (node is not Combatant target || !GodotObject.IsInstanceValid(target))
+            {
+                continue;
+            }
+
+            if (!_alreadyHit.Contains(target.GetInstanceId()))
+            {
+                yield return target;
+            }
+        }
     }
 }

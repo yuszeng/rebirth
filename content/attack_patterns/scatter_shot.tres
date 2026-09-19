@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AttackPatternData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/AttackPatternData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Kind = 7
+Range = 240.0
+Targeting = 0
+MaxTargets = 1
+ProjectileSpeed = 480.0
+ProjectileRadius = 5.0
+ScatterCount = 5
+ScatterArcDegrees = 55.0

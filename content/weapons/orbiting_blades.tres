@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/WeaponData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/attack_patterns/orbiting_satellites.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "orbiting_blades"
+DisplayName = "环刃"
+Description = "固定召出环绕刀阵，贴近敌群可持续命中。"
+AttackScale = 0.72
+BonusDamage = 2.0
+AttackSpeedScale = 0.2
+Pattern = ExtResource("2")
+DamageTags = PackedStringArray("weapon", "melee", "orbit")

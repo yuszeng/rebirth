@@ -25,6 +25,24 @@ public partial class Combatant : CharacterBody2D
         _collision = GetNodeOrNull<CollisionShape2D>("CollisionShape2D");
     }
 
+    /// <summary>只改身体主色，半径不变。护甲外观层由 EquipmentLoadout 叠加。</summary>
+    public void RecolorBody(Color color) => ApplyVisual(color, Radius);
+
+    /// <summary>最大生命修饰变化后按比例缩放当前血量。</summary>
+    public void SyncHealthToStats()
+    {
+        if (Health == null)
+        {
+            return;
+        }
+
+        var newMax = Stats.GetValue(StatType.MaxHp);
+        if (!Mathf.IsEqualApprox(Health.Maximum, newMax))
+        {
+            Health.RetargetMaximum(newMax, preserveRatio: true);
+        }
+    }
+
     /// <summary>同步更新外观多边形与碰撞圆半径。</summary>
     protected void ApplyVisual(Color color, float radius)
     {
@@ -42,6 +60,8 @@ public partial class Combatant : CharacterBody2D
     }
 
     /// <summary>用正多边形近似圆形，用于 Polygon2D 渲染。</summary>
+    public static Vector2[] MakeDisc(float radius) => MakeCircle(radius);
+
     static Vector2[] MakeCircle(float radius)
     {
         const int steps = 16; // 边数，16 足够平滑且轻量

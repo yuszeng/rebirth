@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/weapons/chain_rod.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_weapon_chain_rod"
+DisplayName = "武器：导雷杖"
+Description = "命中后向附近敌人连锁。购入后可按 E 切换为该武器。"
+Price = 20
+Weight = 0.7
+Weapon = ExtResource("2")

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/WeaponData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/attack_patterns/piercing_shot.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "piercing_spear"
+DisplayName = "贯星枪"
+Description = "向前突刺贯穿多个敌人，拉怪成列时收益最高。"
+AttackScale = 0.82
+BonusDamage = 2.0
+AttackSpeedScale = 0.8
+Pattern = ExtResource("2")
+DamageTags = PackedStringArray("weapon", "melee", "piercing")

@@ -11,13 +11,12 @@ alwaysApply: true
 - `docs/ARCHITECTURE.md`
 - `docs/ROADMAP.md`
 
-**Phase 4（商店技能 + 按 E 切换攻击方式）已完成。** 未接到明确指令时，禁止进入 Phase 5+（不要借机实现装备、魔法、宝物、队友、奇遇、转生、魔王、剧情）。
+**Phase 5a（装备栏 + 背包）进行中。** 玩法已定案为 2D 3/4 + 房间相机 + 手动房间战（**不做 3D**），但 5b–5e 未批准前不要改相机、房间、手动攻击或技能键。未接到明确指令时，禁止进入 Phase 6+（不要借机实现魔法、宝物、队友、奇遇、转生、魔王、剧情）。
 
 ## 必须
 
 - 使用 **C#**（不要新增 GDScript 玩法代码）
-- 在现有 `src/core|combat|character|progression|content` 边界上扩展（子目录：`core/state`、`core/utils`、`combat/damage|attack|skill|spawn|ai`、`character/stats`）
-- 内容用 Resource；属性用 `CharacterStats` + `StatModifier`
+- 在现有 `src/core|combat|character|progression|content` 边界上扩展（子目录：`core/state`、`core/utils`、`combat/damage|attack|skill|spawn|ai`、`character/stats|equipment`）- 内容用 Resource；属性用 `CharacterStats` + `StatModifier`
 - 扣血走 `DamageSystem`；找目标走 `TargetingSystem`；随机走 `GameRng`
 - 升级选项动态生成，禁止写死三个按钮逻辑
 - 玩家只有 `Player`，武器可替换，敌人读 `EnemyData`
@@ -28,5 +27,6 @@ alwaysApply: true
 - 把技能名/怪物类型写成到处 if 字符串
 - 把商店/技能/装备塞进 Player
 - 推翻现有攻击/伤害管道另起一套
+- 把项目迁到 Godot 3D / `CharacterBody3D` 来模仿哈迪斯
 
 修当前已交付范围时保持可运行；等待下一步指令再开新 Phase。

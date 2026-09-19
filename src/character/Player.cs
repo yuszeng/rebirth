@@ -6,6 +6,7 @@ public partial class Player : Combatant
     [Export] public CharacterData? Data { get; set; } // 角色配置数据
 
     AttackController? _attackController; // 自动攻击控制器
+    readonly List<WeaponData> _ownedWeapons = []; // 本局持有的武器，按 E 切换
 
     /// <summary>查找当前仍有效的玩家。重开时组里可能短暂残留已释放实例。</summary>
     public static Player? FindAlive()
@@ -42,11 +43,11 @@ public partial class Player : Combatant
     }
 
     /// <summary>根据 CharacterData 初始化属性、外观与武器。</summary>
-    public void Setup(CharacterData data, WeaponData? weaponFallback = null)
+    public void Setup(CharacterData data, WeaponData? weaponOverride = null)
     {
         Data = data; // 设置玩家数据
-        var weaponData = data.StartingWeapon ?? weaponFallback; // 获取武器数据
-        Stats = data.BuildStats(); // 从数据构建基础属性
+        var weaponData = weaponOverride ?? data.StartingWeapon; // 开局选择优先于角色模板默认武器
+        Stats = data.BuildStats(weaponData); // 选中武器的射程必须进入本局基础属性
         ApplyVisual(data.Color, data.Radius); // 应用视觉
         Health.Setup(Stats.GetValue(StatType.MaxHp)); // 设置健康
 
@@ -55,6 +56,50 @@ public partial class Player : Combatant
         _attackController ??= GetNodeOrNull<AttackController>("AttackController"); // 获取攻击控制器
         _attackController?.Setup(weaponData); // 设置攻击控制器
         GetNodeOrNull<SkillController>("SkillController")?.Clear();
+        GetNodeOrNull<EquipmentLoadout>("EquipmentLoadout")?.Clear();
+        _ownedWeapons.Clear();
+        if (weaponData != null && !string.IsNullOrEmpty(weaponData.Id))
+        {
+            _ownedWeapons.Add(weaponData);
+        }
+    }
+
+    public EquipmentLoadout? Loadout => GetNodeOrNull<EquipmentLoadout>("EquipmentLoadout");
+
+    public IReadOnlyList<WeaponData> OwnedWeapons => _ownedWeapons;
+
+    public bool HasWeapon(string weaponId) =>
+        !string.IsNullOrEmpty(weaponId) && _ownedWeapons.Any(weapon => weapon.Id == weaponId);
+
+    public bool CanGrantWeapon(WeaponData weapon) =>
+        !string.IsNullOrEmpty(weapon.Id) && !HasWeapon(weapon.Id);
+
+    /// <summary>把武器加入本局持有列表。同一 Id 不可重复持有，也不在这里切换当前装备。</summary>
+    public bool TryGrantWeapon(WeaponData? weapon)
+    {
+        if (weapon == null || !CanGrantWeapon(weapon))
+        {
+            return false;
+        }
+
+        _ownedWeapons.Add(weapon);
+        return true;
+    }
+
+    /// <summary>切换当前装备武器。攻击范围基础值跟武器走，商店/升级的范围修饰器仍叠加。</summary>
+    public bool TryEquipWeapon(string weaponId)
+    {
+        var weapon = _ownedWeapons.FirstOrDefault(owned => owned.Id == weaponId);
+        if (weapon == null)
+        {
+            return false;
+        }
+
+        GetNodeOrNull<Weapon>("Weapon")?.Configure(weapon);
+        _attackController ??= GetNodeOrNull<AttackController>("AttackController");
+        _attackController?.Setup(weapon);
+        Stats.SetBase(StatType.AttackRange, weapon.Pattern?.Range ?? 78f);
+        return true;
     }
 
     public bool HasSkill(string skillId) =>
@@ -81,11 +126,7 @@ public partial class Player : Combatant
     public void ApplyStatModifier(StatModifier modifier)
     {
         Stats.AddModifier(modifier);
-        var newMax = Stats.GetValue(StatType.MaxHp);
-        if (!Mathf.IsEqualApprox(Health.Maximum, newMax))
-        {
-            Health.RetargetMaximum(newMax, preserveRatio: true);
-        }
+        SyncHealthToStats();
     }
 
     // 物理过程处理：每帧更新移动速度

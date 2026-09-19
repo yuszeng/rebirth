@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="AttackPatternData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/AttackPatternData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Kind = 11
+Range = 110.0
+Targeting = 0
+MaxTargets = 1
+Duration = 2.4
+OrbitCount = 3
+OrbitRadius = 64.0
+SatelliteRadius = 11.0
+OrbitSpeedDegrees = 210.0
+OrbitHitInterval = 0.2
+OrbitHitDamageScale = 0.35

@@ -30,6 +30,10 @@ public partial class GameRng : Node
 
     public float NextFloat() => _rng.Randf(); // [0, 1) 浮点随机
 
+    /// <summary>以 probability（0~1）判定是否成功。用于暴击、闪避。</summary>
+    public bool Chance(float probability) =>
+        probability > 0f && NextFloat() < Mathf.Clamp(probability, 0f, 1f);
+
     public float Range(float from, float to) => _rng.RandfRange(from, to); // 浮点区间
 
     public int Range(int from, int to) => _rng.RandiRange(from, to); // 整数闭区间

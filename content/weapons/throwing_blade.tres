@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/WeaponData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/attack_patterns/throwing_blade.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "throwing_blade"
+DisplayName = "飞刃"
+Description = "高速投向最近敌人，命中第一个目标后消失。"
+AttackScale = 0.7
+BonusDamage = 4.0
+AttackSpeedScale = 1.65
+Pattern = ExtResource("2")
+DamageTags = PackedStringArray("weapon", "ranged", "projectile")

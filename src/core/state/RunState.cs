@@ -16,8 +16,10 @@ public partial class RunState : RefCounted
     public int CombatRound { get; set; } = 1; // 当前战斗回合（从 1 起）
     public float RoundElapsedSeconds { get; set; } // 本回合已战斗秒数
     public float RoundDurationSeconds { get; set; } = 60f; // 本回合时长，进商店后重置
-    public List<string> OwnedSkillIds { get; } = []; // 本局已购技能 Id，不跨转生
-    public string SelectedAttackModeId { get; set; } = BasicAttackModeId; // 当前攻击方式：普通攻击或已购技能 Id
+    public List<string> OwnedWeaponIds { get; } = []; // 本局已拥有武器 Id（含开局选择），不跨转生
+    public List<string> OwnedEquipmentIds { get; } = []; // 本局已购护甲 Id，不跨转生
+    public Dictionary<EquipmentSlotKind, string> EquippedEquipmentIds { get; } = []; // 护甲槽 → 装备 Id；武器槽用 SelectedAttackModeId
+    public string SelectedAttackModeId { get; set; } = BasicAttackModeId; // 当前攻击方式：已装备武器 Id
 
     /// <summary>将本局数据转为只读结算快照。</summary>
     public RunResult ToResult()

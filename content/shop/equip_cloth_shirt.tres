@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/equipment/cloth_shirt.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_equip_cloth_shirt"
+DisplayName = "护甲：布衣"
+Description = "胸部。最大生命 +22。购入后进入背包。"
+Price = 16
+Weight = 0.85
+Equipment = ExtResource("2")

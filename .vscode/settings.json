@@ -1,0 +1,8 @@
+{
+  "dotnet.defaultSolution": "Rebirth.sln",
+  "editor.gotoLocation.multipleDefinitions": "goto",
+  "editor.multiCursorModifier": "alt",
+  "files.exclude": {
+    "**/.godot": true
+  }
+}

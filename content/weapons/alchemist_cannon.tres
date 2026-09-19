@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/WeaponData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/attack_patterns/delayed_explosion.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "alchemist_cannon"
+DisplayName = "炼金炮"
+Description = "标记敌人当前位置，短暂预警后在固定落点爆炸。"
+AttackScale = 1.15
+BonusDamage = 6.0
+AttackSpeedScale = 0.42
+Pattern = ExtResource("2")
+DamageTags = PackedStringArray("weapon", "ranged", "area", "delayed")

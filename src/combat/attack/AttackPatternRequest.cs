@@ -11,4 +11,6 @@ public sealed class AttackPatternRequest
     public IEnumerable<Node>? Candidates { get; init; }
     public float? RangeOverride { get; init; }
     public bool Clockwise { get; init; } = true;
+    /// <summary>后续武技可在执行前改写底层描述，例如把普通飞刃改成贯穿飞刃。</summary>
+    public Func<AttackPatternDescriptor, AttackPatternDescriptor>? PatternModifier { get; init; }
 }

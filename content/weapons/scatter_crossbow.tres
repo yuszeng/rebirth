@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/WeaponData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/attack_patterns/scatter_shot.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "scatter_crossbow"
+DisplayName = "散射弩"
+Description = "向最近敌人的方向发射扇形弹幕，近距离爆发更集中。"
+AttackScale = 0.34
+BonusDamage = 1.0
+AttackSpeedScale = 0.72
+Pattern = ExtResource("2")
+DamageTags = PackedStringArray("weapon", "ranged", "projectile", "scatter")

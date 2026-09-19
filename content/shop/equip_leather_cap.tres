@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/equipment/leather_cap.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_equip_leather_cap"
+DisplayName = "护甲：皮帽"
+Description = "头部。防御 +3。购入后进入背包。"
+Price = 14
+Weight = 0.9
+Equipment = ExtResource("2")

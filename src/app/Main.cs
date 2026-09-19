@@ -16,7 +16,8 @@ public partial class Main : Node2D
 		var enemyScene = ContentDirectory.FindSceneByRootScript("res://scenes", "Enemy.cs");
 		var playerData = ContentDirectory.RequireOne<CharacterData>("res://content/characters");
 		var spawnConfig = ContentDirectory.RequireOne<SpawnConfig>("res://content/spawn");
-		var fallbackWeapon = ContentDirectory.LoadAll<WeaponData>("res://content/weapons").FirstOrDefault();
+		var weaponPool = ContentDirectory.LoadAll<WeaponData>("res://content/weapons");
+		var fallbackWeapon = weaponPool.FirstOrDefault();
 		var fallbackEnemy = ContentDirectory.LoadAll<EnemyData>("res://content/enemies").FirstOrDefault();
 		if (playerScene == null || enemyScene == null || playerData == null || spawnConfig == null)
 		{
@@ -25,11 +26,10 @@ public partial class Main : Node2D
 
 		// 创建并配置玩家
 		var player = playerScene.Instantiate<Player>(); // 玩家实例
-		playerData.StartingWeapon ??= fallbackWeapon; // 角色未配初始武器时用武器目录第一份
 		player.Data = playerData;
 		player.GlobalPosition = Vector2.Zero; // 出生点：场景中心
 		AddChild(player);
-		player.Setup(playerData, playerData.StartingWeapon); // AddChild 后立即绑定武器（重开时 Autoload 仍存活）
+		player.Setup(playerData, playerData.StartingWeapon ?? fallbackWeapon); // 选择前仅用于初始化角色节点
 
 		// 创建刷怪导演，负责按间隔在玩家周围生成敌人
 		var director = new SpawnDirector
@@ -42,23 +42,36 @@ public partial class Main : Node2D
 		AddChild(director);
 
 		// 挂载 UI 层
+		AddChild(new DamagePopupLayer()); // 敌人受击飘字
 		AddChild(new Hud()); // 血条、经验、统计信息
 		AddChild(new LevelUpPanel()); // 升级选项面板
 		AddChild(new ShopPanel()); // 回合结束后的商店
 		AddChild(new AttackModePanel()); // 战斗中的攻击方式选择
+		var startingWeaponPanel = new StartingWeaponPanel();
+		AddChild(startingWeaponPanel); // 开局选择层级高于其他战斗 UI
 		AddChild(new GameOverPanel()); // 结算面板
 		AddChild(new PauseMenu()); // ESC 暂停菜单
 
 		var combatLoop = ContentDirectory.RequireOne<CombatLoopConfig>("res://content/run");
 		var shopConfig = ContentDirectory.RequireOne<ShopConfig>("res://content/run");
-		// 启动本局：升级池 / 商店池扫目录，不必在此逐条注册
-		GameManager.Instance.BeginRun(
-			player,
-			UpgradeService.LoadPool(),
-			playerData.StartingWeapon,
-			ShopService.LoadPool(),
-			shopConfig,
-			combatLoop);
+		if (weaponPool.Count == 0)
+		{
+			GameLog.Error("未找到可选择的初始武器：res://content/weapons");
+			return;
+		}
+
+		// Boot 阶段暂停世界，只让 Always 模式的选择面板响应；选定后 BeginRun 会解除暂停。
+		GetTree().Paused = true;
+		startingWeaponPanel.Open(weaponPool, selectedWeapon =>
+		{
+			GameManager.Instance.BeginRun(
+				player,
+				UpgradeService.LoadPool(),
+				selectedWeapon,
+				ShopService.LoadPool(),
+				shopConfig,
+				combatLoop);
+		});
 	}
 
 	/// <summary>场外暗底 + 场内地板 + 细描边；物理墙无外观，避免四条粗杠。</summary>

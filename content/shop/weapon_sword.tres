@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/weapons/sword.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_weapon_sword"
+DisplayName = "武器：铁剑"
+Description = "近距离扇形挥砍。购入后可按 E 切换为该武器。"
+Price = 12
+Weight = 1.0
+Weapon = ExtResource("2")

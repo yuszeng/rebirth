@@ -6,6 +6,7 @@ public enum AreaHitKind
     PointTargets, // 由 TargetingSystem 点选，不是范围
     Sector, // 扇形
     Circle, // 圆形
+    Capsule, // 有向线段及其宽度，用于光束等直线攻击
 }
 
 /// <summary>一次范围判定的几何参数。Direction 只对扇形有意义。</summary>
@@ -17,6 +18,7 @@ public readonly struct AreaShape
     public float Radius { get; init; }
     public Vector2 Direction { get; init; }
     public float ArcDegrees { get; init; }
+    public float HalfWidth { get; init; }
 
     public static AreaShape Circle(Vector2 origin, float originRadius, float radius) => new()
     {
@@ -41,6 +43,19 @@ public readonly struct AreaShape
         Radius = radius,
         Direction = direction.LengthSquared() < 0.0001f ? Vector2.Right : direction,
         ArcDegrees = arcDegrees,
+    };
+
+    public static AreaShape Capsule(
+        Vector2 origin,
+        float length,
+        float halfWidth,
+        Vector2 direction) => new()
+    {
+        Kind = AreaHitKind.Capsule,
+        Origin = origin,
+        Radius = Math.Max(length, 0f),
+        HalfWidth = Math.Max(halfWidth, 0f),
+        Direction = direction.LengthSquared() < 0.0001f ? Vector2.Right : direction.Normalized(),
     };
 }
 
@@ -94,6 +109,13 @@ public static class AreaHitSystem
     static bool Overlaps(AreaShape shape, Combatant combatant)
     {
         var offset = combatant.GlobalPosition - shape.Origin;
+        if (shape.Kind == AreaHitKind.Capsule)
+        {
+            var along = Mathf.Clamp(offset.Dot(shape.Direction), 0f, shape.Radius);
+            var closest = shape.Direction * along;
+            return offset.DistanceTo(closest) <= shape.HalfWidth + combatant.Radius;
+        }
+
         var distance = offset.Length();
         var reach = shape.Radius + shape.OriginRadius + combatant.Radius;
         if (distance > reach)

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/weapons/piercing_spear.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_weapon_piercing_spear"
+DisplayName = "武器：贯星枪"
+Description = "向前突刺贯穿多个敌人。购入后可按 E 切换为该武器。"
+Price = 16
+Weight = 0.8
+Weapon = ExtResource("2")

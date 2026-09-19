@@ -7,4 +7,6 @@ public sealed class ShopStock
     public int Gold { get; init; }
     public int RefreshPrice { get; init; }
     public IReadOnlyList<ShopItemData?> Slots { get; init; } = [];
+    public IReadOnlyList<EquipmentSlotView> EquipmentSlots { get; set; } = [];
+    public IReadOnlyList<BackpackItemView> Backpack { get; set; } = [];
 }

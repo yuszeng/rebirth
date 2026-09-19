@@ -51,7 +51,7 @@ public partial class Hud : CanvasLayer
 	public override void _Process(double _delta) => Refresh(); // 每帧刷新存活时间与属性
 
 	void OnHudEvent(RunState _) => Refresh();
-	void OnDamageApplied(DamageRequest _, float _amount) => Refresh();
+	void OnDamageApplied(DamageResult _) => Refresh();
 	void OnHudPairEvent(int _a, int _b) => Refresh();
 	void OnHudLevelEvent(int _) => Refresh();
 	void OnAttackModeChanged(string _) => Refresh();
@@ -100,7 +100,7 @@ public partial class Hud : CanvasLayer
 		panel.OffsetLeft = -268;
 		panel.OffsetRight = -24;
 		panel.OffsetTop = 24;
-		panel.OffsetBottom = 268;
+		panel.OffsetBottom = 430;
 		parent.AddChild(panel);
 
 		var label = new Label
@@ -140,33 +140,32 @@ public partial class Hud : CanvasLayer
 	static string FormatAttackModes(Player? player)
 	{
 		var selected = GameManager.Instance.Run.SelectedAttackModeId;
-		var controller = player?.GetNodeOrNull<SkillController>("SkillController");
-		if (controller == null || controller.Skills.Count == 0)
+		var weapons = player?.OwnedWeapons ?? [];
+		if (weapons.Count <= 1)
 		{
-			return $"当前攻击 {FormatCurrentAttackName(player, selected)}\n可切换技能 无";
+			return $"当前攻击 {FormatCurrentAttackName(player, selected)}\n可切换武器 无";
 		}
 
-		var parts = controller.Skills.Select(skill =>
+		var parts = weapons.Select(weapon =>
 		{
-			var cd = skill.Remaining > 0.05f ? $"{skill.Remaining:0.0}s" : "就绪";
-			var current = skill.Data.Id == selected ? "当前 " : "";
-			return $"{current}{skill.Data.DisplayName} {cd}";
+			var current = weapon.Id == selected ? "当前 " : "";
+			return $"{current}{weapon.DisplayName}";
 		});
 		return
 			$"当前攻击 {FormatCurrentAttackName(player, selected)}\n" +
-			"可切换技能 " + string.Join(" · ", parts);
+			"可切换武器 " + string.Join(" · ", parts);
 	}
 
 	static string FormatCurrentAttackName(Player? player, string selected)
 	{
-		if (selected == RunState.BasicAttackModeId)
+		var equipped = player?.GetNodeOrNull<Weapon>("Weapon")?.Data;
+		if (equipped != null && equipped.Id == selected)
 		{
-			return player?.GetNodeOrNull<Weapon>("Weapon")?.Data?.DisplayName ?? "普通攻击";
+			return equipped.DisplayName;
 		}
 
-		var skill = player?.GetNodeOrNull<SkillController>("SkillController")?.Skills
-			.FirstOrDefault(runtime => runtime.Data.Id == selected);
-		return skill?.Data.DisplayName ?? "普通攻击";
+		var owned = player?.OwnedWeapons.FirstOrDefault(weapon => weapon.Id == selected);
+		return owned?.DisplayName ?? equipped?.DisplayName ?? "普通攻击";
 	}
 
 	static string FormatAttributes(Player? player)
@@ -192,6 +191,11 @@ public partial class Hud : CanvasLayer
 			$"攻速 {stats.GetValue(StatType.AttackSpeed):0.00}/秒\n" +
 			$"移速 {Mathf.RoundToInt(stats.GetValue(StatType.MoveSpeed))}\n" +
 			$"范围 {Mathf.RoundToInt(stats.GetValue(StatType.AttackRange))}\n" +
+			$"防御 {stats.GetValue(StatType.Defense):0.#}\n" +
+			$"暴击 {stats.GetValue(StatType.CritRate) * 100f:0.#}% / {stats.GetValue(StatType.CritDamage):0.##}x\n" +
+			$"闪避 {stats.GetValue(StatType.Dodge) * 100f:0.#}%\n" +
+			$"吸血 {stats.GetValue(StatType.Lifesteal) * 100f:0.#}%\n" +
+			$"伤害加成 {stats.GetValue(StatType.DamageBonus) * 100f:0.#}%\n" +
 			$"武器 {weaponName}（{weaponTargetText}）\n" +
 			FormatAttackModes(player);
 	}

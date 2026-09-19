@@ -22,7 +22,7 @@ public partial class Weapon : Node2D
             attackRange = Data.Pattern.Range;
         }
 
-        var amount = user.Stats.GetValue(StatType.Attack) + Data.BonusDamage;
+        var amount = user.Stats.GetValue(StatType.Attack) * Data.AttackScale + Data.BonusDamage;
         var didAttack = AttackPatternExecutor.TryExecute(new AttackPatternRequest
         {
             Host = this,

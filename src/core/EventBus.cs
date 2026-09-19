@@ -7,7 +7,7 @@ public partial class EventBus : Node
 
     public event Action<RunState>? RunStarted; // 本局开始
     public event Action<RunResult>? RunEnded; // 本局结束
-    public event Action<DamageRequest, float>? DamageApplied; // 伤害已结算（请求 + 最终数值）
+    public event Action<DamageResult>? DamageApplied; // 伤害已结算（含暴击/闪避）
     public event Action<Combatant, Node?>? ActorDied; // 战斗单位死亡（受害者 + 伤害来源）
     public event Action<int, int>? XpGained; // 获得经验（本次增量 + 当前总量）
     public event Action<int, int>? GoldGained; // 获得金币（本次增量 + 当前总量）
@@ -57,7 +57,7 @@ public partial class EventBus : Node
 
     public void EmitRunStarted(RunState run) => InvokeSafe(RunStarted, run); // 触发本局开始事件
     public void EmitRunEnded(RunResult result) => InvokeSafe(RunEnded, result); // 触发本局结束事件
-    public void EmitDamageApplied(DamageRequest request, float finalAmount) => InvokeSafe(DamageApplied, request, finalAmount); // 触发伤害已结算事件
+    public void EmitDamageApplied(DamageResult result) => InvokeSafe(DamageApplied, result);
     public void EmitActorDied(Combatant victim, Node? source) => InvokeSafe(ActorDied, victim, source); // 触发战斗单位死亡事件
     public void EmitXpGained(int amount, int total) => InvokeSafe(XpGained, amount, total); // 触发获得经验事件
     public void EmitGoldGained(int amount, int total) => InvokeSafe(GoldGained, amount, total); // 触发获得金币事件

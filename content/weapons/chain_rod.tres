@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/WeaponData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/attack_patterns/chain_jump.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "chain_rod"
+DisplayName = "导雷杖"
+Description = "先命中两个敌人，再从每个目标连锁到附近的新目标。"
+AttackScale = 0.65
+BonusDamage = 2.0
+AttackSpeedScale = 0.46
+Pattern = ExtResource("2")
+DamageTags = PackedStringArray("weapon", "ranged", "chain")

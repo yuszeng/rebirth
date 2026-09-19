@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/equipment/leather_gloves.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_equip_leather_gloves"
+DisplayName = "护甲：皮手套"
+Description = "手部。攻速 +12%。购入后进入背包。"
+Price = 16
+Weight = 0.85
+Equipment = ExtResource("2")

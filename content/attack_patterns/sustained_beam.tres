@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AttackPatternData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/AttackPatternData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Kind = 9
+Range = 260.0
+Targeting = 0
+MaxTargets = 1
+Duration = 1.2
+BeamWidth = 20.0
+BeamTickInterval = 0.15
+BeamTickDamageScale = 0.18

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/WeaponData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/attack_patterns/sustained_beam.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "beam_prism"
+DisplayName = "辉光棱镜"
+Description = "持续追踪初始目标，并伤害光束路径上的所有敌人。"
+AttackScale = 0.8
+BonusDamage = 2.0
+AttackSpeedScale = 0.25
+Pattern = ExtResource("2")
+DamageTags = PackedStringArray("weapon", "ranged", "beam")

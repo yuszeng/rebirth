@@ -10,23 +10,54 @@ public static class AttackPatternExecutor
             return false;
         }
 
-        return request.Pattern.Kind switch
+        var descriptor = AttackPatternDescriptor.Resolve(request.Pattern);
+        if (request.PatternModifier != null)
         {
-            AttackPatternKind.InstantCircleAroundSelf => ExecuteInstantCircle(request),
-            AttackPatternKind.PointTarget => ExecutePointTarget(request),
-            AttackPatternKind.SweptSector => ExecuteSweptSector(request),
-            AttackPatternKind.Projectile => ExecuteProjectile(request),
-            AttackPatternKind.SweptCircleAroundSelf => ExecuteSweptCircle(request),
-            AttackPatternKind.InstantSector => ExecuteInstantSector(request),
-            _ => false,
-        };
+            descriptor = request.PatternModifier(descriptor);
+        }
+
+        return Execute(request, descriptor);
     }
 
+    static bool Execute(AttackPatternRequest request, AttackPatternDescriptor descriptor) =>
+        descriptor.Delivery switch
+        {
+            AttackDeliveryKind.Instant => ExecuteInstant(request, descriptor),
+            AttackDeliveryKind.Projectile => ExecuteProjectile(request, descriptor),
+            AttackDeliveryKind.AttachedToSource => ExecuteAttachedToSource(request, descriptor),
+            AttackDeliveryKind.DelayedAtTarget => ExecuteDelayedExplosion(request),
+            AttackDeliveryKind.PersistentOrbit => ExecuteOrbitingSatellites(request),
+            AttackDeliveryKind.Chain => ExecuteChainJump(request),
+            _ => false,
+        };
+
     static float RangeOf(AttackPatternRequest request) =>
-        Math.Max(request.RangeOverride ?? request.Pattern.Range, 0f);
+        CombatStatScale.Range(request.Source, Math.Max(request.RangeOverride ?? request.Pattern.Range, 0f));
+
+    static float DurationOf(AttackPatternRequest request) =>
+        CombatStatScale.Duration(request.Source, request.Pattern.Duration);
 
     static IEnumerable<Node> CandidatesOf(AttackPatternRequest request) =>
         request.Candidates ?? request.Host.GetTree().GetNodesInGroup("enemies");
+
+    static bool ExecuteInstant(AttackPatternRequest request, AttackPatternDescriptor descriptor) =>
+        descriptor.HitShape switch
+        {
+            AttackHitShapeKind.PointTargets => ExecutePointTarget(request),
+            AttackHitShapeKind.Circle => ExecuteInstantCircle(request),
+            AttackHitShapeKind.Sector => ExecuteInstantSector(request),
+            _ => false,
+        };
+
+    static bool ExecuteAttachedToSource(AttackPatternRequest request, AttackPatternDescriptor descriptor) =>
+        (descriptor.HitShape, descriptor.HitPolicy) switch
+        {
+            (AttackHitShapeKind.Circle, AttackHitPolicyKind.PerTargetOnce) => ExecuteSweptCircle(request),
+            (AttackHitShapeKind.Sector, AttackHitPolicyKind.PerTargetOnce) => ExecuteSweptSector(request),
+            (AttackHitShapeKind.Capsule, AttackHitPolicyKind.Pierce) => ExecutePiercingCollision(request, descriptor),
+            (AttackHitShapeKind.Capsule, AttackHitPolicyKind.Tick) => ExecuteSustainedBeam(request),
+            _ => false,
+        };
 
     static bool ExecuteInstantCircle(AttackPatternRequest request)
     {
@@ -61,7 +92,7 @@ public static class AttackPatternExecutor
             InnerRadius = request.Source.Radius * 0.25f,
             Radius = range + request.Source.Radius,
             ArcDegrees = 360f,
-            Duration = request.Pattern.Duration,
+            Duration = DurationOf(request),
             Clockwise = request.Clockwise,
             Texture = request.Pattern.AttackVfxTexture,
             Source = request.Source,
@@ -108,7 +139,7 @@ public static class AttackPatternExecutor
                 InnerRadius = request.Source.Radius * 0.2f,
                 Radius = range + request.Source.Radius * 0.35f,
                 ArcDegrees = request.Pattern.ArcDegrees,
-                Duration = request.Pattern.Duration,
+                Duration = DurationOf(request),
                 Clockwise = request.Clockwise,
                 Texture = request.Pattern.AttackVfxTexture,
                 Source = request.Source,
@@ -176,7 +207,7 @@ public static class AttackPatternExecutor
             InnerRadius = request.Source.Radius * 0.2f,
             Radius = range + request.Source.Radius * 0.35f,
             ArcDegrees = request.Pattern.ArcDegrees,
-            Duration = request.Pattern.Duration,
+            Duration = DurationOf(request),
             Clockwise = request.Clockwise,
             Texture = request.Pattern.AttackVfxTexture,
             Source = request.Source,
@@ -185,7 +216,51 @@ public static class AttackPatternExecutor
         });
     }
 
-    static bool ExecuteProjectile(AttackPatternRequest request)
+    static bool ExecuteProjectile(AttackPatternRequest request, AttackPatternDescriptor descriptor)
+    {
+        var targets = SelectTargets(request, RangeOf(request), maxTargets: 1);
+        if (targets.Count == 0)
+        {
+            return false;
+        }
+
+        var direction = targets[0].GlobalPosition - request.Source.GlobalPosition;
+        var centerAngle = direction.Angle();
+        var count = Math.Max(descriptor.ProjectileCount, 1);
+        var arc = Mathf.DegToRad(Math.Max(descriptor.ProjectileArcDegrees, 0f));
+        var maxHits = ProjectileMaxHits(request, descriptor);
+        var parent = request.Host.GetTree().CurrentScene ?? request.Host;
+        for (var i = 0; i < count; i++)
+        {
+            var offset = count == 1 ? 0f : Mathf.Lerp(-arc * 0.5f, arc * 0.5f, i / (float)(count - 1));
+            ProjectileAttack.SpawnDirected(
+                parent,
+                request.Source,
+                request.Source.GlobalPosition,
+                Vector2.FromAngle(centerAngle + offset),
+                request.Pattern,
+                RangeOf(request),
+                request.Damage,
+                request.DamageTags,
+                maxHits);
+        }
+
+        return true;
+    }
+
+    static int ProjectileMaxHits(AttackPatternRequest request, AttackPatternDescriptor descriptor)
+    {
+        if (descriptor.HitPolicy != AttackHitPolicyKind.Pierce)
+        {
+            return 1;
+        }
+
+        return request.Pattern.PierceCount <= 0
+            ? int.MaxValue
+            : Math.Max(request.Pattern.PierceCount, Math.Max(descriptor.MaxHits, 1));
+    }
+
+    static bool ExecutePiercingCollision(AttackPatternRequest request, AttackPatternDescriptor descriptor)
     {
         var targets = SelectTargets(request, RangeOf(request), maxTargets: 1);
         if (targets.Count == 0)
@@ -194,16 +269,165 @@ public static class AttackPatternExecutor
         }
 
         var parent = request.Host.GetTree().CurrentScene ?? request.Host;
-        ProjectileAttack.Spawn(
+        PiercingThrustAttack.Spawn(
             parent,
             request.Source,
-            request.Source.GlobalPosition,
             targets[0].GlobalPosition,
+            request.Pattern,
+            RangeOf(request),
+            request.Damage,
+            request.DamageTags,
+            MaxHitsForPierce(request, descriptor));
+        return true;
+    }
+
+    static int MaxHitsForPierce(AttackPatternRequest request, AttackPatternDescriptor descriptor)
+    {
+        if (request.Pattern.PierceCount <= 0 || descriptor.MaxHits <= 0)
+        {
+            return int.MaxValue;
+        }
+
+        return Math.Max(request.Pattern.PierceCount, descriptor.MaxHits);
+    }
+
+    static bool ExecuteChainJump(AttackPatternRequest request)
+    {
+        var candidates = CandidatesOf(request).ToArray();
+        var currentWave = TargetingSystem.Select(
+            request.Source.GlobalPosition,
+            request.Source.Radius,
+            candidates,
+            RangeOf(request),
+            request.Pattern.Targeting,
+            Math.Max(request.Pattern.MaxTargets, 1));
+        if (currentWave.Count == 0)
+        {
+            return false;
+        }
+
+        var hitIds = new HashSet<ulong>();
+        foreach (var target in currentWave)
+        {
+            hitIds.Add(target.GetInstanceId());
+            ApplyDirectDamage(request, target, request.Damage);
+            AttackFlash.Play(request.Host, request.Source.GlobalPosition, target.GlobalPosition);
+        }
+
+        var jumpRange = CombatStatScale.Range(request.Source, Math.Max(request.Pattern.ChainJumpRange, 0f));
+        var targetsPerJump = Math.Max(request.Pattern.ChainTargetsPerJump, 1);
+        var multiplier = Math.Max(request.Pattern.ChainDamageMultiplier, 0f);
+        for (var jump = 0; jump < Math.Max(request.Pattern.ChainJumps, 0); jump++)
+        {
+            var nextWave = new List<Combatant>();
+            foreach (var previous in currentWave)
+            {
+                if (!GodotObject.IsInstanceValid(previous))
+                {
+                    continue;
+                }
+
+                var targets = TargetingSystem.Select(
+                    previous.GlobalPosition,
+                    previous.Radius,
+                    Excluding(candidates, hitIds),
+                    jumpRange,
+                    request.Pattern.Targeting,
+                    targetsPerJump);
+                foreach (var target in targets)
+                {
+                    hitIds.Add(target.GetInstanceId());
+                    var jumpDamage = request.Damage * Mathf.Pow(multiplier, jump + 1);
+                    ApplyDirectDamage(request, target, jumpDamage);
+                    AttackFlash.Play(request.Host, previous.GlobalPosition, target.GlobalPosition);
+                    nextWave.Add(target);
+                }
+            }
+
+            if (nextWave.Count == 0)
+            {
+                break;
+            }
+
+            currentWave = nextWave;
+        }
+
+        return true;
+    }
+
+    static bool ExecuteSustainedBeam(AttackPatternRequest request)
+    {
+        var targets = SelectTargets(request, RangeOf(request), maxTargets: 1);
+        if (targets.Count == 0)
+        {
+            return false;
+        }
+
+        SustainedBeamAttack.Spawn(
+            request.Host.GetTree().CurrentScene ?? request.Host,
+            request.Source,
+            targets[0],
             request.Pattern,
             RangeOf(request),
             request.Damage,
             request.DamageTags);
         return true;
+    }
+
+    static bool ExecuteDelayedExplosion(AttackPatternRequest request)
+    {
+        var targets = SelectTargets(request, RangeOf(request), maxTargets: 1);
+        if (targets.Count == 0)
+        {
+            return false;
+        }
+
+        DelayedExplosionAttack.Spawn(
+            request.Host.GetTree().CurrentScene ?? request.Host,
+            request.Source,
+            targets[0].GlobalPosition,
+            request.Pattern,
+            request.Damage,
+            request.DamageTags);
+        return true;
+    }
+
+    static bool ExecuteOrbitingSatellites(AttackPatternRequest request)
+    {
+        OrbitingSatelliteAttack.SpawnOrRefresh(
+            request.Host.GetTree().CurrentScene ?? request.Host,
+            request.Source,
+            request.Pattern,
+            request.Damage,
+            request.DamageTags);
+        return true;
+    }
+
+    static IEnumerable<Node> Excluding(IEnumerable<Node> candidates, HashSet<ulong> excluded)
+    {
+        foreach (var node in candidates)
+        {
+            if (node is not Combatant target || !GodotObject.IsInstanceValid(target))
+            {
+                continue;
+            }
+
+            if (!excluded.Contains(target.GetInstanceId()))
+            {
+                yield return target;
+            }
+        }
+    }
+
+    static void ApplyDirectDamage(AttackPatternRequest request, Combatant target, float amount)
+    {
+        DamageSystem.Apply(new DamageRequest
+        {
+            Source = request.Source,
+            Target = target,
+            Amount = amount,
+            Tags = request.DamageTags,
+        });
     }
 
     static List<Combatant> SelectTargets(

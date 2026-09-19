@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ShopItemData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/content/ShopItemData.cs" id="1"]
+[ext_resource type="Resource" path="res://content/weapons/scatter_crossbow.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+Id = "shop_weapon_scatter_crossbow"
+DisplayName = "武器：散射弩"
+Description = "向最近敌人方向发射扇形弹幕。购入后可按 E 切换为该武器。"
+Price = 18
+Weight = 0.8
+Weapon = ExtResource("2")

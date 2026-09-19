@@ -73,6 +73,16 @@ public partial class GameManager : Node
             _player.Setup(_player.Data, startingWeapon);
         }
 
+        foreach (var weapon in _player.OwnedWeapons)
+        {
+            if (!string.IsNullOrEmpty(weapon.Id) && !Run.OwnedWeaponIds.Contains(weapon.Id))
+            {
+                Run.OwnedWeaponIds.Add(weapon.Id);
+            }
+        }
+
+        Run.SelectedAttackModeId = startingWeapon?.Id ?? RunState.BasicAttackModeId;
+
         IsUserPaused = false;
         State = GameState.InRun;
         GetTree().Paused = false;
@@ -294,8 +304,8 @@ public partial class GameManager : Node
         PauseAndClearRound();
         _shopAfterUpgrade = false;
         State = GameState.Shop;
-        _shop.OpenNewVisit();
-        EventBus.Instance.EmitShopOpened(_shop.Snapshot(Run));
+        _shop.OpenNewVisit(Run);
+        EventBus.Instance.EmitShopOpened(VisibleShopStock());
     }
 
     /// <summary>用本局金币买当前货架上的一件商品。</summary>
@@ -307,7 +317,12 @@ public partial class GameManager : Node
         }
 
         var pending = _shop.Peek(slotIndex);
-        if (pending?.Skill != null && (_player == null || !_player.CanGrantSkill(pending.Skill)))
+        if (pending?.Weapon != null && (_player == null || !_player.CanGrantWeapon(pending.Weapon)))
+        {
+            return;
+        }
+
+        if (pending?.GrantsEquipment == true && (_player?.Loadout == null || !_player.Loadout.CanGrant(pending.Equipment)))
         {
             return;
         }
@@ -318,12 +333,16 @@ public partial class GameManager : Node
             return;
         }
 
-        if (item.Skill != null)
+        if (item.Weapon != null)
         {
-            if (_player != null && _player.TryGrantSkill(item.Skill) && !Run.OwnedSkillIds.Contains(item.Skill.Id))
+            if (_player != null && _player.TryGrantWeapon(item.Weapon) && !Run.OwnedWeaponIds.Contains(item.Weapon.Id))
             {
-                Run.OwnedSkillIds.Add(item.Skill.Id);
+                Run.OwnedWeaponIds.Add(item.Weapon.Id);
             }
+        }
+        else if (item.GrantsEquipment && item.Equipment != null)
+        {
+            GrantEquipment(item.Equipment);
         }
         else
         {
@@ -331,7 +350,7 @@ public partial class GameManager : Node
             _player?.ApplyStatModifier(item.ToModifier($"shop_{Run.CombatRound}_{_shopPurchaseSerial}_{item.Id}"));
         }
 
-        EventBus.Instance.EmitShopChanged(_shop.Snapshot(Run));
+        EventBus.Instance.EmitShopChanged(VisibleShopStock());
     }
 
     /// <summary>花费金币刷新四个槽位。</summary>
@@ -347,7 +366,7 @@ public partial class GameManager : Node
             return;
         }
 
-        EventBus.Instance.EmitShopChanged(_shop.Snapshot(Run));
+        EventBus.Instance.EmitShopChanged(VisibleShopStock());
     }
 
     /// <summary>战斗中打开攻击方式选择。选择期间暂停，避免玩家被 UI 操作惩罚。</summary>
@@ -365,10 +384,15 @@ public partial class GameManager : Node
         EventBus.Instance.EmitAttackModeSelectionOpened(BuildAttackModeStock());
     }
 
-    /// <summary>选择当前攻击方式：普通攻击始终可选，技能必须已购入。</summary>
+    /// <summary>选择当前攻击方式：必须是本局已拥有的武器。</summary>
     public void ChooseAttackMode(string modeId)
     {
         if (State != GameState.AttackModeSelect || !CanSelectAttackMode(modeId))
+        {
+            return;
+        }
+
+        if (_player != null && !_player.TryEquipWeapon(modeId))
         {
             return;
         }
@@ -378,6 +402,36 @@ public partial class GameManager : Node
         GetTree().Paused = false;
         EventBus.Instance.EmitAttackModeChanged(modeId);
         EventBus.Instance.EmitAttackModeSelectionClosed();
+    }
+
+    /// <summary>商店背包换装：护甲走 Loadout，武器走现有攻击切换。</summary>
+    public void EquipFromBackpack(string itemId, bool isWeapon)
+    {
+        if (State != GameState.Shop || _player == null || string.IsNullOrEmpty(itemId))
+        {
+            return;
+        }
+
+        if (isWeapon)
+        {
+            if (!_player.TryEquipWeapon(itemId))
+            {
+                return;
+            }
+
+            Run.SelectedAttackModeId = itemId;
+            EventBus.Instance.EmitAttackModeChanged(itemId);
+        }
+        else if (!(_player.Loadout?.TryEquip(itemId) ?? false))
+        {
+            return;
+        }
+        else
+        {
+            SyncEquippedEquipmentIds();
+        }
+
+        EventBus.Instance.EmitShopChanged(VisibleShopStock());
     }
 
     public void CancelAttackModeSelection()
@@ -394,27 +448,16 @@ public partial class GameManager : Node
 
     AttackModeStock BuildAttackModeStock()
     {
-        var options = new List<AttackModeOption>
-        {
-            new()
+        var options = _player?.OwnedWeapons
+            .Where(weapon => !string.IsNullOrEmpty(weapon.Id))
+            .Select(weapon => new AttackModeOption
             {
-                Id = RunState.BasicAttackModeId,
-                DisplayName = "普通攻击",
-                Description = "使用当前武器自动攻击。",
-            },
-        };
-
-        var controller = _player?.GetNodeOrNull<SkillController>("SkillController");
-        if (controller != null)
-        {
-            options.AddRange(controller.Skills.Select(skill => new AttackModeOption
-            {
-                Id = skill.Data.Id,
-                DisplayName = skill.Data.DisplayName,
-                Description = skill.Data.Description,
-                Skill = skill.Data,
-            }));
-        }
+                Id = weapon.Id,
+                DisplayName = weapon.DisplayName,
+                Description = weapon.Description,
+                Weapon = weapon,
+            })
+            .ToList() ?? [];
 
         return new AttackModeStock
         {
@@ -424,7 +467,137 @@ public partial class GameManager : Node
     }
 
     bool CanSelectAttackMode(string modeId) =>
-        modeId == RunState.BasicAttackModeId || Run.OwnedSkillIds.Contains(modeId);
+        Run.OwnedWeaponIds.Contains(modeId);
+
+    void GrantEquipment(EquipmentData equipment)
+    {
+        var loadout = _player?.Loadout;
+        if (loadout == null || !loadout.TryGrant(equipment))
+        {
+            return;
+        }
+
+        if (!Run.OwnedEquipmentIds.Contains(equipment.Id))
+        {
+            Run.OwnedEquipmentIds.Add(equipment.Id);
+        }
+
+        loadout.TryAutoEquipIfEmpty(equipment);
+        SyncEquippedEquipmentIds();
+    }
+
+    void SyncEquippedEquipmentIds()
+    {
+        Run.EquippedEquipmentIds.Clear();
+        var loadout = _player?.Loadout;
+        if (loadout == null)
+        {
+            return;
+        }
+
+        foreach (var slot in EquipmentSlots.All)
+        {
+            if (!EquipmentSlots.IsArmor(slot))
+            {
+                continue;
+            }
+
+            var item = loadout.GetEquippedArmor(slot);
+            if (item != null)
+            {
+                Run.EquippedEquipmentIds[slot] = item.Id;
+            }
+        }
+    }
+
+    ShopStock VisibleShopStock()
+    {
+        var stock = _shop.Snapshot(Run);
+        stock.EquipmentSlots = BuildEquipmentSlotViews();
+        stock.Backpack = BuildBackpackViews();
+        return stock;
+    }
+
+    List<EquipmentSlotView> BuildEquipmentSlotViews()
+    {
+        var views = new List<EquipmentSlotView>();
+        var loadout = _player?.Loadout;
+        foreach (var slot in EquipmentSlots.All)
+        {
+            if (slot == EquipmentSlotKind.Weapon)
+            {
+                var weapon = _player?.OwnedWeapons.FirstOrDefault(item => item.Id == Run.SelectedAttackModeId);
+                views.Add(new EquipmentSlotView
+                {
+                    Slot = slot,
+                    SlotName = EquipmentSlots.DisplayName(slot),
+                    ItemId = weapon?.Id ?? "",
+                    DisplayName = weapon?.DisplayName ?? "空",
+                    Description = weapon?.Description ?? "",
+                });
+                continue;
+            }
+
+            var armor = loadout?.GetEquippedArmor(slot);
+            views.Add(new EquipmentSlotView
+            {
+                Slot = slot,
+                SlotName = EquipmentSlots.DisplayName(slot),
+                ItemId = armor?.Id ?? "",
+                DisplayName = armor?.DisplayName ?? "空",
+                Description = armor?.Description ?? "",
+            });
+        }
+
+        return views;
+    }
+
+    List<BackpackItemView> BuildBackpackViews()
+    {
+        var views = new List<BackpackItemView>();
+        if (_player != null)
+        {
+            foreach (var weapon in _player.OwnedWeapons)
+            {
+                if (string.IsNullOrEmpty(weapon.Id))
+                {
+                    continue;
+                }
+
+                views.Add(new BackpackItemView
+                {
+                    Id = weapon.Id,
+                    IsWeapon = true,
+                    Slot = EquipmentSlotKind.Weapon,
+                    SlotName = EquipmentSlots.DisplayName(EquipmentSlotKind.Weapon),
+                    DisplayName = weapon.DisplayName,
+                    Description = weapon.Description,
+                    IsEquipped = weapon.Id == Run.SelectedAttackModeId,
+                });
+            }
+        }
+
+        var loadout = _player?.Loadout;
+        if (loadout != null)
+        {
+            foreach (var armor in loadout.Owned)
+            {
+                var equipped = loadout.GetEquippedArmor(armor.Slot);
+                views.Add(new BackpackItemView
+                {
+                    Id = armor.Id,
+                    IsWeapon = false,
+                    Slot = armor.Slot,
+                    SlotName = EquipmentSlots.DisplayName(armor.Slot),
+                    DisplayName = armor.DisplayName,
+                    Description = armor.Description,
+                    IsEquipped = equipped?.Id == armor.Id,
+                });
+            }
+        }
+
+        return views;
+    }
 
     /// <summary>离开商店，清零回合计时并开始下一回合战斗。</summary>
     public void LeaveShop()

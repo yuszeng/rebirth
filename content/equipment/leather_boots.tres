@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EquipmentData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/EquipmentData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "leather_boots"
+DisplayName = "皮靴"
+Description = "移速 +18"
+Slot = 4
+Stat = 3
+Flat = 18.0
+Percent = 0.0
+VisualColor = Color(0.42, 0.28, 0.18, 1)

@@ -1,6 +1,6 @@
 namespace Rebirth.Progression;
 
-/// <summary>商店货架：加权抽商品、刷新、占位售出。不解析属性/技能内部逻辑。</summary>
+/// <summary>商店货架：加权抽商品、刷新、占位售出。不解析属性/武器内部逻辑。</summary>
 public sealed class ShopService
 {
     public const string DefaultPoolDirectory = "res://content/shop";
@@ -18,10 +18,10 @@ public sealed class ShopService
         ContentDirectory.LoadAll<ShopItemData>(directory);
 
     /// <summary>进入商店时重新上架，刷新次数归零。</summary>
-    public void OpenNewVisit()
+    public void OpenNewVisit(RunState run)
     {
         _refreshCount = 0;
-        FillSlots();
+        FillSlots(run);
     }
 
     public ShopStock Snapshot(RunState run) => new()
@@ -44,7 +44,7 @@ public sealed class ShopService
         }
 
         _refreshCount += 1;
-        FillSlots();
+        FillSlots(run);
         return true;
     }
 
@@ -66,7 +66,7 @@ public sealed class ShopService
         return item;
     }
 
-    void FillSlots()
+    void FillSlots(RunState run)
     {
         _slots.Clear();
         var offerCount = Math.Max(0, Config.OfferCount);
@@ -75,7 +75,8 @@ public sealed class ShopService
             return;
         }
 
-        var remaining = Pool.ToList();
+        // 已拥有的武器/护甲不再上架；属性商品不受此限制
+        var remaining = Pool.Where(item => IsOfferable(item, run)).ToList();
         var take = Math.Min(offerCount, remaining.Count);
         for (var i = 0; i < take; i++)
         {
@@ -84,5 +85,22 @@ public sealed class ShopService
             _slots.Add(picked);
             remaining.Remove(picked);
         }
+    }
+
+    static bool IsOfferable(ShopItemData item, RunState run)
+    {
+        if (item.Weapon != null)
+        {
+            var weaponId = item.Weapon.Id;
+            return !string.IsNullOrEmpty(weaponId) && !run.OwnedWeaponIds.Contains(weaponId);
+        }
+
+        if (item.Equipment != null)
+        {
+            var equipmentId = item.Equipment.Id;
+            return !string.IsNullOrEmpty(equipmentId) && !run.OwnedEquipmentIds.Contains(equipmentId);
+        }
+
+        return true;
     }
 }

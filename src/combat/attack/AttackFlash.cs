@@ -19,6 +19,8 @@ public static class AttackFlash
             Points = [Vector2.Zero, toGlobal - fromGlobal],
         };
         host.AddChild(line);
+        line.GlobalPosition = fromGlobal;
+        line.GlobalRotation = 0f;
 
         var tween = host.CreateTween();
         tween.TweenInterval(duration);

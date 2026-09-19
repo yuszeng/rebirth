@@ -10,5 +10,5 @@ Description = "生命偷取 +5%"
 Price = 18
 Weight = 0.7
 Stat = 13
-Flat = 0.0
-Percent = 0.05
+Flat = 0.05
+Percent = 0.0

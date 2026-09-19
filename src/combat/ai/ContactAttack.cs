@@ -31,8 +31,7 @@ public sealed class ContactAttack
             Amount = attacker.Stats.GetValue(StatType.Attack), // 攻击力
             Tags = ["contact", "melee"], // 伤害标签
         });
-        GD.Print(attacker);
-   
+
         AttackFlash.Play(
             attacker, 
             attacker.GlobalPosition, 

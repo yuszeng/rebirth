@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EquipmentData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/EquipmentData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "iron_helm"
+DisplayName = "铁盔"
+Description = "最大生命 +16"
+Slot = 0
+Stat = 0
+Flat = 16.0
+Percent = 0.0
+VisualColor = Color(0.62, 0.66, 0.72, 1)

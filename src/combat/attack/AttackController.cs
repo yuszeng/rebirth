@@ -53,11 +53,6 @@ public partial class AttackController : Node
             return; // 如果不是本局进行中则直接返回
         }
 
-        if (GameManager.Instance.Run.SelectedAttackModeId != RunState.BasicAttackModeId)
-        {
-            return; // 当前选择技能攻击时，武器普攻停用
-        }
-
         EnsureWeaponReady(); // 确保武器准备好
 
         if (_owner?.Health == null || _owner.Health.IsDead || _weapon?.Data == null)
@@ -71,7 +66,9 @@ public partial class AttackController : Node
             return; // 冷却时间未结束时直接返回
         }
 
-        var attackSpeed = Math.Max(_owner.Stats.GetValue(StatType.AttackSpeed), 0.05f); // 防止除零
+        var attackSpeed = Math.Max(
+            _owner.Stats.GetValue(StatType.AttackSpeed) * _weapon.Data.AttackSpeedScale,
+            0.05f); // 武器倍率保留角色攻速成长，同时允许重武器与快武器有不同节奏
         if (_weapon.TryAttack(_owner)) // 尝试攻击
         {
             _cooldown = 1f / attackSpeed; // 攻速越高冷却越短

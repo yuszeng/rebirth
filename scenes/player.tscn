@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://src/character/Player.cs" id="1"]
 [ext_resource type="Script" path="res://src/combat/damage/Health.cs" id="2"]
 [ext_resource type="Script" path="res://src/combat/attack/AttackController.cs" id="3"]
 [ext_resource type="Script" path="res://src/combat/attack/Weapon.cs" id="4"]
 [ext_resource type="Script" path="res://src/combat/skill/SkillController.cs" id="5"]
+[ext_resource type="Script" path="res://src/character/equipment/EquipmentLoadout.cs" id="6"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_player"]
 radius = 16.0
@@ -33,6 +34,9 @@ WeaponPath = NodePath("../Weapon")
 
 [node name="SkillController" type="Node2D" parent="."]
 script = ExtResource("5")
+
+[node name="EquipmentLoadout" type="Node" parent="."]
+script = ExtResource("6")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position_smoothing_enabled = true

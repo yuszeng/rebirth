@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EquipmentData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/content/EquipmentData.cs" id="1"]
+
+[resource]
+script = ExtResource("1")
+Id = "cloth_pants"
+DisplayName = "布裤"
+Description = "闪避 +5%"
+Slot = 3
+Stat = 8
+Flat = 0.05
+Percent = 0.0
+VisualColor = Color(0.28, 0.34, 0.48, 1)

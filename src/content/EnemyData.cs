@@ -27,6 +27,10 @@ public partial class EnemyData : Resource
         stats.SetBase(StatType.Attack, Attack);
         stats.SetBase(StatType.MoveSpeed, MoveSpeed);
         stats.SetBase(StatType.AttackRange, ContactRange);
+        stats.SetBase(StatType.Defense, 0f);
+        stats.SetBase(StatType.CritRate, 0f);
+        stats.SetBase(StatType.CritDamage, 2f);
+        stats.SetBase(StatType.Dodge, 0f);
         return stats;
     }
 }

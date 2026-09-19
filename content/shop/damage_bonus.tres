@@ -10,5 +10,5 @@ Description = "伤害加成 +10%"
 Price = 16
 Weight = 0.8
 Stat = 17
-Flat = 0.0
-Percent = 0.1
+Flat = 0.1
+Percent = 0.0
